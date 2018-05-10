@@ -3,11 +3,52 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 
+import pandas as pd
+import pycountry
+from SECRET  import mapbox_access_token
+
 app = dash.Dash('_template App', static_folder='static')
 server = app.server
 
+df = pd.read_csv("./data/stations.dat") 
+graph1data = [ dict(
+            type = 'scattergeo',
+                lat = df['LAT'],
+                lon = df['LON'],
+                text = df['TXT'],
+                mode = 'markers',
+                resolution = '50',
+                marker = dict(
+                    size = 2,
+                    opacity = 0.5,
+                    symbol = 'circle',
+                    color = 'blue',
+                    line = dict(
+                        width=1,
+                        color='rgba(102, 102, 102)'
+                        ),
+                ))]
+graph1layout = dict(
+    title = 'Raingauge locations <br>(Hover for names)',
+        geo = dict(
+            scope='europe',
+            projection=dict( type='mercator' ),
+            showland = True,
+            #landcolor = "rgb(250, 250, 250)",
+            #subunitcolor = "rgb(217, 217, 217)",
+            #countrycolor = "rgb(217, 217, 217)",
+            countrywidth = 0.5,
+            subunitwidth = 0.5
+            ),
+)
+
 graph1= dcc.Graph(
-        id='example-graph')
+        id='example-graph',
+        figure=dict(data=graph1data,
+                    layout=graph1layout,
+                    ) 
+
+)
 
 banner = html.Div([
     html.H2("_template"),

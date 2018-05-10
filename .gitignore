@@ -1,3 +1,5 @@
+SECRET.py
+__pycache__/
 junk/
 env/
 .idea/
