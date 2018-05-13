@@ -4,23 +4,31 @@ import numpy as np
 
 missingthres = dict(Y=365*.1, M=30*.1, W=7*.1, Q=365/4*.1)
 hdf_store = './data/ECA_ALL.hdf'
-
+#COMPRESS = 'blosc:snappy'
+#COMPRESS = 'bzip2'
+#COMPRESS = 'blosc:lz4hc'
+COMPRESS = 'blosc:zlib'
+#COMPRESS = 'bzip2'
+COMPLEVEVL = 9
+COMP=dict(complib=COMPRESS, complevel=COMPLEVEVL, format='table',  )
 
 def read_rain(hdfstore, name, file):
     tomm= lambda x: np.NaN if float(x) < 0 else 0.1*float(x) # negative values = missing data
     df = pd.read_csv(file, names=["Date", "Rainfall_mm"], index_col="Date", usecols=[2,3], header=15, parse_dates=['Date'], converters={3:tomm})
     df.replace(-9999, np.nan, inplace=True)
-    hdfstore.put(name,df, format='table', data_columns=True)
+    hdfstore.put(name,df, **COMP)
 
 def rainfall2hdf():
     stns = pd.read_hdf(hdf_store, 'stations', columns=['STAID'])
-    with  pd.HDFStore(hdf_store,"a") as hdfstore:
+    with  pd.io.pytables.HDFStore(hdf_store,"a") as hdfstore:
+        #ct=0
         for index, s in stns.iterrows():
             stnid=s['STAID']
             read_rain(hdfstore, 'stations/{}'.format(stnid), './data/eca_blend_rr/{}.txt'.format(stnid))
-
+            #ct+=1
+            #if (ct>10): break;
 def resampled(staid,freq):
-    data=pd.read_hdf('./data/ECA_ALL.hdf','stations/{}'.format(staid))
+    data=pd.read_hdf(hdf_store,'stations/{}'.format(staid))
     ds=data.resample(freq).apply(lambda x: 
                                  x.sum(skipna=True) if x.isnull().sum() < missingthres[freq] 
                                  else x.sum(skipna=False))
@@ -38,11 +46,11 @@ def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
     stationsdf['STAID']=stationsdf['STAID'].apply('RR_STAID{0:06d}'.format, 8)
     stationsdf['TXT']=stationsdf['STANAME']+" ("+stationsdf['CN']+")"
     
-    with  pd.HDFStore(hdf_store,"w") as hdfstore:
-        hdfstore.put('stations',stationsdf, format='table', data_columns=True)
+    with  pd.io.pytables.HDFStore(hdf_store,"w") as hdfstore:
+        hdfstore.put('stations',stationsdf, **COMP)
         
 def stations():
-    data=pd.read_hdf('./data/ECA_ALL.hdf','stations')
+    data=pd.read_hdf(hdf_store,'stations')
     return data
 
 def pre_process():
@@ -50,7 +58,7 @@ def pre_process():
     rainfall2hdf()    
     
 if __name__ == "__main__":
-    #pre_process() # takes several minutes (10min?) 
+    pre_process() # takes several minutes (10min?) 
     freq="Y"
     staid = 'RR_STAID000001'
     ds = resampled(staid, freq)
