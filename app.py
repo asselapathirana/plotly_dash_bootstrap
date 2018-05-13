@@ -9,7 +9,10 @@ import plotly.graph_objs as go
 
 import pandas as pd
 import pycountry
-from data.SECRET  import mapbox_access_token
+try:
+    from data.SECRET  import mapbox_access_token
+except: 
+    mapbox_access_token="foo"
 
 import rainproc as rp
 
