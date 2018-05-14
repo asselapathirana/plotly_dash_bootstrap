@@ -6,6 +6,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
+from plotly.colors import DEFAULT_PLOTLY_COLORS as COLORS
 
 import pandas as pd
 import pycountry
@@ -106,22 +107,43 @@ def display_stats(clickData):
     [dash.dependencies.Input('stationmap', 'clickData'),
      ]
 )
+
+
 def display_chart(clickData):
     print(clickData, file=sys.stderr)
     bars =[]
-    for pt in clickData['points']:
+    for i,pt in enumerate(clickData['points']):
         df=rp.resampled(pt['customdata'], 'Y')
-        bars.append(go.Bar(
+        
+        marker = dict(
+            size = 5,
+                color=COLORS[i%10],
+                line = dict(
+                    width = 1,
+                    color=COLORS[i%10],
+                )
+        )             
+        
+        bars.append(go.Scatter(
             x=df.index,
             y=df['Rainfall_mm'],
-            name=pt['customdata'],
-        ))       
+            name=pt['text'],
+            mode="markers+lines",
+            marker=marker,       
+            
+        ))
+        yfit, pval = rp.linear_fit(df)
+        bars.append(go.Scatter( x=df.index, y=yfit, mode='lines',
+                                name=pt['text']+" trend (p-value for slope {:4.4f})".format(pval),
+                                hoverinfo='none',
+                                marker=marker,))
+        
     return {
         'data' : bars,
-        'layout': dict(
-            layout = go.Layout(
+        'layout':  go.Layout(
                 title="Annual Rainfall",
                 showlegend= True,
+                legend=dict(x=.1,y=1.0),
                 xaxis=dict(
                     title='Date',
                     ),
@@ -129,15 +151,15 @@ def display_chart(clickData):
                     title="Precipitation (mm)",
                 ),
             
-            #margin=go.Margin(
-                #l=50,
-                #r=10,
-                #b=50, 
-                #t=10,
-                #pad=4
-                #),
+            margin=go.Margin(
+                l=50,
+                r=10,
+                b=50, 
+                t=70,
+                pad=4
+                ),
             ),
-            )
+            
     }
 
 

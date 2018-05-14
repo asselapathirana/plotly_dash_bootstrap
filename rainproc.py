@@ -1,8 +1,9 @@
 import pandas as pd
 import pycountry
 import numpy as np
+import statsmodels.formula.api as smf
 
-missingthres = dict(Y=365*.1, M=30*.1, W=7*.1, Q=365/4*.1)
+notmissingthres = dict(Y=365*.9, M=30*.9, W=7*.9, Q=365/4*.9)
 hdf_store = './data/ECA_ALL.hdf'
 #COMPRESS = 'blosc:snappy'
 #COMPRESS = 'bzip2'
@@ -11,6 +12,9 @@ COMPRESS = 'blosc:zlib'
 #COMPRESS = 'bzip2'
 COMPLEVEVL = 9
 COMP=dict(complib=COMPRESS, complevel=COMPLEVEVL, format='table',  )
+
+
+
 
 def read_rain(hdfstore, name, file):
     tomm= lambda x: np.NaN if float(x) < 0 else 0.1*float(x) # negative values = missing data
@@ -30,11 +34,15 @@ def rainfall2hdf():
 def resampled(staid,freq):
     data=pd.read_hdf(hdf_store,'stations/{}'.format(staid))
     ds=data.resample(freq).apply(lambda x: 
-                                 x.sum(skipna=True) if x.isnull().sum() < missingthres[freq] 
-                                 else x.sum(skipna=False))
+                                 x.sum(skipna=True) if x.notnull().sum() > notmissingthres[freq] 
+                                 else np.NaN)
     return ds    
-    
-    
+
+def linear_fit(data, xcol='ndates', ycol='Rainfall_mm'):
+    data['ndates'] = (data.index-pd.to_datetime('1800-01-01')).astype('timedelta64[D]')
+    ft=smf.ols( '{} ~ {}'.format(ycol,xcol), data=data, missing='drop' ).fit()
+    return ft.params.ndates*data.ndates+ft.params.Intercept, ft.pvalues.ndates
+
 def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
     def dms2dd(v):
         v=[float(x) for x in v.split(':')]
@@ -58,8 +66,9 @@ def pre_process():
     rainfall2hdf()    
     
 if __name__ == "__main__":
-    pre_process() # takes several minutes (10min?) 
+    # pre_process() # takes several minutes (10min?) 
     freq="Y"
-    staid = 'RR_STAID000001'
+    staid = 'RR_STAID011094'
     ds = resampled(staid, freq)
+    lf=linear_fit(ds)
     print(ds)
