@@ -1,5 +1,6 @@
 
-body{
+
+ body{
     font-size: 1.5em;
     line-height: 1.6;
     font-weight: 400;
@@ -53,11 +54,6 @@ body{
     border-bottom-color: initial;
     border-left-color: rgb(216, 216, 216);
     border-image: initial;
-}
-
-
-.js-plotly-plot .plot-container .svg-container .modebar{
-    z-index: -100;
 }
 
 

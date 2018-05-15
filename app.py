@@ -61,7 +61,8 @@ graph1= dcc.Graph(
                     layout=graph1layout,
                     ),
         config={
-            'displayModeBar': False} 
+            #'modeBarButtonsToRemove': ['pan2d', 'lasso2d']
+        }
 )
 
 banner = html.Div([
@@ -111,7 +112,7 @@ def display_stats(clickData):
 
 def display_chart(clickData):
     print(clickData, file=sys.stderr)
-    bars =[]
+    traces =[]
     for i,pt in enumerate(clickData['points']):
         df=rp.resampled(pt['customdata'], 'Y')
         
@@ -124,7 +125,7 @@ def display_chart(clickData):
                 )
         )             
         
-        bars.append(go.Scatter(
+        traces.append(go.Scatter(
             x=df.index,
             y=df['Rainfall_mm'],
             name=pt['text'],
@@ -133,33 +134,27 @@ def display_chart(clickData):
             
         ))
         yfit, pval = rp.linear_fit(df)
-        bars.append(go.Scatter( x=df.index, y=yfit, mode='lines',
+        traces.append(go.Scatter( x=df.index, y=yfit, mode='lines',
                                 name=pt['text']+" trend (p-value for slope {:4.4f})".format(pval),
                                 hoverinfo='none',
                                 marker=marker,))
+    layout=go.Layout(
+        title="Annual Rainfall",
+                    showlegend= True,
+                    legend=dict(x=.1,y=1.0),
+                    xaxis=dict(
+                        title='Date',
+                        ),
+                    yaxis=dict(
+                        title="Precipitation (mm)",
+                        ),
+    
+                    margin=go.Margin(l=50, r=10, b=50, t=70, pad=4),
+                ),    
         
     return {
-        'data' : bars,
-        'layout':  go.Layout(
-                title="Annual Rainfall",
-                showlegend= True,
-                legend=dict(x=.1,y=1.0),
-                xaxis=dict(
-                    title='Date',
-                    ),
-                yaxis=dict(
-                    title="Precipitation (mm)",
-                ),
-            
-            margin=go.Margin(
-                l=50,
-                r=10,
-                b=50, 
-                t=70,
-                pad=4
-                ),
-            ),
-            
+        'data' : traces,
+        'layout': layout, 
     }
 
 
