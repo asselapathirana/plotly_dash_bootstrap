@@ -100,7 +100,7 @@ def plot_ts(pts):
         traces.append(go.Scatter(
             x=data.index,
             y=data['Rainfall_mm'],
-            name=df.iloc[pt]['TXT']+" trend (p={:4.4f})".format(pval),
+            name=df.iloc[pt]['TXT']+" (trend, p={:4.4f})".format(pval),
             mode="markers+lines",
             marker=marker,       
         ))
