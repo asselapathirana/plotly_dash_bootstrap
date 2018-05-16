@@ -213,8 +213,8 @@ def staindex2stadesc(pts):
         res['Station'].append(df.iloc[pt]['STANAME'])
         res['Country'].append(pycountry.countries.get(alpha_3=df.iloc[pt]['CN']).name)
         res['Elevation'].append('{:5.0f}'.format(df.iloc[pt]['HGHT']))
-        res['LON'].append('{:5.3f}'.format(df.iloc[pt]['LON']))
-        res['LAT'].append('{:5.3f}'.format(df.iloc[pt]['LAT']))
+        res['LON'].append('{:5.5f}'.format(df.iloc[pt]['LON']))
+        res['LAT'].append('{:5.5f}'.format(df.iloc[pt]['LAT']))
     return res
 
 
