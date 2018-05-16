@@ -7,6 +7,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 from plotly.colors import DEFAULT_PLOTLY_COLORS as COLORS
+import pycountry
 
 import pandas as pd
 import pycountry
@@ -80,27 +81,26 @@ row1 = html.Div([  # row 1 start ([
 def plot_ts(pts):
     traces =[]
     for i,pt in enumerate(pts):
-        df=rp.resampled(pt['customdata'], 'Y')
+        data = resampled(pt)
         
         marker = dict(
             size = 5,
+            color=COLORS[i%10],
+            line = dict(
+                width = 1,
                 color=COLORS[i%10],
-                line = dict(
-                    width = 1,
-                    color=COLORS[i%10],
-                )
+            )
         )             
-        yfit, pval = rp.linear_fit(df)
+        yfit, pval = rp.linear_fit(data)
         traces.append(go.Scatter(
-            x=df.index,
-            y=df['Rainfall_mm'],
-            name=pt['text']+" trend (p={:4.4f})".format(pval),
+            x=data.index,
+            y=data['Rainfall_mm'],
+            name=df.iloc[pt]['TXT']+" trend (p={:4.4f})".format(pval),
             mode="markers+lines",
             marker=marker,       
-            
         ))
         
-        traces.append(go.Scatter( x=df.index, y=yfit, mode='lines',
+        traces.append(go.Scatter( x=data.index, y=yfit, mode='lines',
                                 hoverinfo='none',
                                 showlegend=False,
                                 marker=marker,))
@@ -124,25 +124,28 @@ def plot_ts(pts):
         'layout': layout
     }
 
+def resampled(pt):
+    data=rp.resampled(df.iloc[pt]['STAID'], 'Y')
+    return data
 
-dat=df[df['STAID']=='RR_STAID000162'].to_dict() # De Buit (NL)
-sta=list(dat['STAID'].values())[0]
-txt=list(dat['TXT'].values())[0]
-pt=dict(customdata=sta, text=txt)
 
-graph2= dcc.Graph(
-    id='stationgraph', figure=plot_ts([pt]))
+ind=df[df['STAID']=='RR_STAID000162'].index[0] # De Buit (NL)
+
+graph2= dcc.Graph(id='stationgraph')
 stat_display = html.Div(id='statdisplay')
 
-row2 = html.Div([  # row 2 start ([
-                html.Div([graph2], className="eight columns"),
-                html.Div([stat_display], className="four columns"),                   
-], className="row")  # row 2 end ])
+row2 = html.Div([
+    html.Div([graph2])
+    ], className='row')
+row3 = html.Div([
+    html.Div([stat_display]),
+    ], className='row')
 
 app.layout = html.Div([  # begin container
     banner,
     row1,
     row2,
+    row3,
 ], className="container",
 )  # end container
 
@@ -153,18 +156,61 @@ app.layout = html.Div([  # begin container
      ]
 )
 def display_stats(clickData):
-    #print(clickData, file=sys.stderr)
-    return html.Pre( json.dumps(clickData, indent=2))
+    print("STAT:", clickData, file=sys.stderr)
+    if (clickData):
+        pts = mapClickData2staindex(clickData)
+    else:
+        pts=[ind]
+    print(stats(pts), file=sys.stderr)
+    return stats(pts)
 
+def stats(pts):
+    dfs=[]
+    for pt in pts:
+        dfs.append(resampled(pt))
+    alls={**staindex2stadesc(pts), **rp.stats(dfs)}
+    
+    return html.Table(
+        [
+            html.Tr( [html.Th(x) for x in alls.keys()] )
+        ] +
+        
+        [ html.Tr([  html.Td(alls[k][i]) for k in alls.keys()]) for i in range(len(list(alls.values())[0]))]
+            #for i in alls.values()[0]:
+            #html.Tr( [html.Td("walter"), html.Td("rudin"), html.Td("wr@analysis.com")] ),
+            #html.Tr( [html.Td("gilbert"), html.Td("strang"), html.Td("gb@algebra.com")] )
+        
+    )
+    
 
 @app.callback(
-    dash.dependencies.Output('stationgraph', 'figure'),
-    [dash.dependencies.Input('stationmap', 'clickData'),
-     ]
+   dash.dependencies.Output('stationgraph', 'figure'),
+   [dash.dependencies.Input('stationmap', 'clickData'),
+    ]
 )
 def display_chart(clickData):
-    return plot_ts(clickData['points'])
+    print("CHART:", clickData, file=sys.stderr)
+    if (clickData):
+        pts = mapClickData2staindex(clickData)
+    else:
+        pts=[ind]
+    return plot_ts(pts)
 
+def mapClickData2staindex(clickData):
+    pts=[]
+    for pt in clickData['points']:
+        pts.append(df[df['STAID']==pt['customdata']].index[0])
+    return pts
+
+def staindex2stadesc(pts):
+    res={'Station':[], 'Country':[], 'Elevation':[], 'LON':[], 'LAT':[],}
+    for pt in pts:
+        res['Station'].append(df.iloc[pt]['STANAME'])
+        res['Country'].append(pycountry.countries.get(alpha_3=df.iloc[pt]['CN']).name)
+        res['Elevation'].append('{:5.0f}'.format(df.iloc[pt]['HGHT']))
+        res['LON'].append('{:5.3f}'.format(df.iloc[pt]['LON']))
+        res['LAT'].append('{:5.3f}'.format(df.iloc[pt]['LAT']))
+    return res
 
 
 # load the styles
@@ -180,3 +226,5 @@ for css in external_css:
 
 if __name__ == '__main__':
     app.run_server(debug=True, use_debugger=False, use_reloader=True)
+    s=stats([1,5])
+    print(s)

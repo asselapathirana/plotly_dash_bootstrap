@@ -57,6 +57,24 @@ def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
     with  pd.io.pytables.HDFStore(hdf_store,"w") as hdfstore:
         hdfstore.put('stations',stationsdf, **COMP)
         
+def stats(dfs):
+    res=[]
+    for ds in dfs:
+        res.append(dict(
+        missing='{:.2%}'.format(ds['Rainfall_mm'].isnull().sum()/ds['Rainfall_mm'].shape[0]),
+        mean="{:8.2f}".format(ds['Rainfall_mm'].mean()),
+        std="{:8.2f}".format(ds['Rainfall_mm'].std()),
+        years="{:10d}".format(ds['Rainfall_mm'].shape[0]),
+        maxv="{:8.1f}".format(ds['Rainfall_mm'].max()),
+        minv="{:8.1f}".format(ds['Rainfall_mm'].min()),
+        ))
+    resd={}
+    for k in res[0]:
+        resd[k] = tuple(d[k] for d in res)    
+    return resd
+    
+
+
 def stations():
     data=pd.read_hdf(hdf_store,'stations')
     return data
@@ -68,7 +86,9 @@ def pre_process():
 if __name__ == "__main__":
     # pre_process() # takes several minutes (10min?) 
     freq="Y"
-    staid = 'RR_STAID011094'
+    staid = 'RR_STAID000094'
     ds = resampled(staid, freq)
+    ds2 = resampled('RR_STAID011416', freq)
+    stats([ds,ds2])
     lf=linear_fit(ds)
     print(ds)
