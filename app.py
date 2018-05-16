@@ -90,8 +90,13 @@ def plot_ts(pts):
                 width = 1,
                 color=COLORS[i%10],
             )
-        )             
-        yfit, pval = rp.linear_fit(data)
+        ) 
+        if (data['Rainfall_mm'].count()>=2): # at least 2 non-Nan values
+            yfit, pval = rp.linear_fit(data)
+        else:
+            yfit=[]
+            pval=1.0
+        
         traces.append(go.Scatter(
             x=data.index,
             y=data['Rainfall_mm'],
@@ -227,4 +232,5 @@ for css in external_css:
 if __name__ == '__main__':
     app.run_server(debug=True, use_debugger=False, use_reloader=True)
     s=stats([1,5])
+    plot_ts([1,5])
     print(s)
