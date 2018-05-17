@@ -52,7 +52,7 @@ graph1layout = go.Layout(
         l=10,
         r=10,
         b=10,
-        t=10,
+        t=30,
         pad=4
         ),    
 )
@@ -85,7 +85,7 @@ def plot_ts(pts, trange=[]):
     traces =[]
     for i,pt in enumerate(pts):
         data = resampled(pt)
-        data=data['{}-01-01'.format(trange[0]):'{}-01-01'.format(trange[1]+1)]
+        data = _subset_to_range(trange, data)
         marker = dict(
             size = 5,
             color=COLORS[i%10],
@@ -131,6 +131,11 @@ def plot_ts(pts, trange=[]):
         'data' : traces,
         'layout': layout
     }
+
+def _subset_to_range(trange, data):
+    if(trange):
+        data=data['{}-01-01'.format(trange[0]):'{}-01-01'.format(trange[1]+1)]
+    return data
 
 def resampled(pt):
     data=rp.resampled(station_df.iloc[pt]['STAID'], 'Y')
@@ -180,7 +185,10 @@ app.layout = html.Div([  # begin container
 def new_slider(value):
     dfs=[resampled(int(v)) for v in value]
     mint,maxt=rp.get_timelimits(dfs)
-    print("XXX:", mint,maxt, file=sys.stderr)
+    
+    marks={int(x):str(int(x)) for x in rp.auto_tick([mint,maxt],max_tick=10)}
+    ticks={int(x):'' for x in rp.auto_tick([mint,maxt],max_tick=20)}
+    print("XXX:", marks, file=sys.stderr)
     sli=dcc.RangeSlider(
         id='time_range',
             min=mint,
@@ -188,8 +196,10 @@ def new_slider(value):
             step=1,
             value=[mint,maxt],
             marks={
-                mint: str(mint),
-                maxt: str(maxt),                
+                mint: "",
+                **ticks,
+                **marks,
+                maxt: "",                
             },
             
             
@@ -199,26 +209,28 @@ def new_slider(value):
 @app.callback(
     dash.dependencies.Output('statdisplay', 'children'),
     [dash.dependencies.Input('station_dd', 'value'),
+     dash.dependencies.Input('time_range','value')
     ]
 )
-def display_stats(value):
+def display_stats(value, trange):
     print("STAT:", value, file=sys.stderr)
-    return stats_astable(value[-3:])
+    return stats_astable(value[-3:], trange)
 
-def stats_astable(pts):
-    alls=stat_from_indexes(pts)
-    
+def stats_astable(pts, trange=[]):
+    alls=stat_from_indexes(pts, trange)   
     return html.Table(
         [html.Tr( [html.Th(x) for x in alls.keys()] )] 
         + 
         [ html.Tr([  html.Td(alls[k][i]) for k in alls.keys()]) for i in range(len(list(alls.values())[0]))]
     )
 
-def stat_from_indexes(pts):
+def stat_from_indexes(pts, trange=[]):
     pts=[int(pt) for pt in pts]
     dfs=[]
     for pt in pts:
-        dfs.append(resampled(pt))
+        data=resampled(pt)
+        data=_subset_to_range(trange, data)
+        dfs.append(data)
     alls={**staindex2stadesc(pts), **rp.stats(dfs)}
     return alls
 

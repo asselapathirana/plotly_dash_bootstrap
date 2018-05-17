@@ -15,6 +15,31 @@ COMPLEVEVL = 9
 COMP=dict(complib=COMPRESS, complevel=COMPLEVEVL, format='table',  )
 
 
+def auto_tick(data_range, max_tick=10, tf_inside=False):
+    """
+    tool function that automatically calculate optimal ticks based on range and the max number of ticks
+    :param data_range:   range of data, e.g. [-0.1, 0.5]
+    :param max_tick:     max number of ticks, an interger, default to 10
+    :param tf_inside:    True/False if only allow ticks to be inside
+    :return:             list of ticks
+    """
+    data_span = data_range[1] - data_range[0]
+    scale = 10.0**np.floor(np.log10(data_span))    # scale of data as the order of 10, e.g. 1, 10, 100, 0.1, 0.01, ...
+    list_tick_size_nmlz = [5.0, 2.0, 1.0, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01]   # possible tick sizes for normalized data in range [1, 10]
+    tick_size_nmlz = 1.0     # initial tick size for normalized data
+    for i in range(len(list_tick_size_nmlz)):                 # every loop reduces tick size thus increases tick number
+        num_tick = data_span/scale/list_tick_size_nmlz[i]     # number of ticks for the current tick size
+        if num_tick > max_tick:                               # if too many ticks, break loop
+            tick_size_nmlz = list_tick_size_nmlz[i-1]
+            break
+    tick_size = tick_size_nmlz * scale             # tick sizse for the original data
+    ticks = np.unique(np.arange(data_range[0]/tick_size, data_range[1]/tick_size).round())*tick_size    # list of ticks
+
+    if tf_inside:     # if only allow ticks within the given range
+        ticks = ticks[ (ticks>=data_range[0]) * (ticks<=data_range[1])]
+
+    return ticks
+
 
 
 def read_rain(hdfstore, name, file):
@@ -68,8 +93,6 @@ def stats(dfs):
         years="{:10d}".format(ds['Rainfall_mm'].shape[0]),
         maxv="{:8.1f}".format(ds['Rainfall_mm'].max()),
         minv="{:8.1f}".format(ds['Rainfall_mm'].min()),
-        maxt=ds.index.max().to_pydatetime(),
-        mint=ds.index.min().to_pydatetime(),
         ))
     resd={}
     for k in res[0]:
