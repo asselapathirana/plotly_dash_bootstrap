@@ -2,6 +2,7 @@ import pandas as pd
 import pycountry
 import numpy as np
 import statsmodels.formula.api as smf
+import datetime
 
 notmissingthres = dict(Y=365*.9, M=30*.9, W=7*.9, Q=365/4*.9)
 hdf_store = './data/ECA_ALL.hdf'
@@ -67,14 +68,21 @@ def stats(dfs):
         years="{:10d}".format(ds['Rainfall_mm'].shape[0]),
         maxv="{:8.1f}".format(ds['Rainfall_mm'].max()),
         minv="{:8.1f}".format(ds['Rainfall_mm'].min()),
-        maxt=ds.index.max().to_pydatetime().year,
-        mint=ds.index.min().to_pydatetime().year,
+        maxt=ds.index.max().to_pydatetime(),
+        mint=ds.index.min().to_pydatetime(),
         ))
     resd={}
     for k in res[0]:
         resd[k] = tuple(d[k] for d in res)    
     return resd
-    
+ 
+def get_timelimits(dfs):
+    maxt=[]
+    mint=[]
+    for ds in dfs:
+        maxt.append(ds.index.max().to_pydatetime().year)
+        mint.append(ds.index.min().to_pydatetime().year)
+    return (min(mint),max(maxt))
 
 
 def stations():
@@ -91,6 +99,6 @@ if __name__ == "__main__":
     staid = 'RR_STAID000094'
     ds = resampled(staid, freq)
     ds2 = resampled('RR_STAID011416', freq)
-    stats([ds,ds2])
+    get_timelimits([ds,ds2])
     lf=linear_fit(ds)
     print(ds)

@@ -8,6 +8,7 @@ import dash_html_components as html
 import plotly.graph_objs as go
 from plotly.colors import DEFAULT_PLOTLY_COLORS as COLORS
 import pycountry
+import datetime
 
 import pandas as pd
 import pycountry
@@ -78,12 +79,13 @@ row1 = html.Div([  # row 1 start ([
 ], className="row")  # row 1 end ])
 
 
-def plot_ts(pts):
+def plot_ts(pts, trange=[]):
+    print("TRANGE:", trange, file=sys.stderr)
     pts=[int(pt) for pt in pts]
     traces =[]
     for i,pt in enumerate(pts):
         data = resampled(pt)
-        
+        data=data['{}-01-01'.format(trange[0]):'{}-01-01'.format(trange[1]+1)]
         marker = dict(
             size = 5,
             color=COLORS[i%10],
@@ -154,7 +156,7 @@ sdd=dcc.Dropdown(
     multi=True
 )
 
-timeslidediv=html.Div([dcc.RangeSlider(id='time_range')], id='slider_container')
+timeslidediv=html.Div([dcc.RangeSlider(id='time_range')], id='slider_container', className='slider-box')
 
 toolbar = html.Div([
     html.Div([sdd]),
@@ -176,11 +178,9 @@ app.layout = html.Div([  # begin container
     ]
 )
 def new_slider(value):
-    vs=[int(v) for v in value]
-    stat=stat_from_indexes(vs)
-    print("XXX:",stat['mint'], file=sys.stderr)
-    mint=min(stat['mint'])
-    maxt=max(stat['maxt'])
+    dfs=[resampled(int(v)) for v in value]
+    mint,maxt=rp.get_timelimits(dfs)
+    print("XXX:", mint,maxt, file=sys.stderr)
     sli=dcc.RangeSlider(
         id='time_range',
             min=mint,
@@ -191,6 +191,7 @@ def new_slider(value):
                 mint: str(mint),
                 maxt: str(maxt),                
             },
+            
             
     )    
     return sli
@@ -237,11 +238,12 @@ def update_station_dd(clickData, dd_value):
 @app.callback(
    dash.dependencies.Output('stationgraph', 'figure'),
    [dash.dependencies.Input('station_dd', 'value'),
-    ]
+    dash.dependencies.Input('time_range','value')
+    ],
 )
-def display_chart(value):
-    print("CHART:", value, file=sys.stderr)
-    return plot_ts(value[-3:])
+def display_chart(value, trange):
+    #print("CHART:", value, file=sys.stderr)
+    return plot_ts(value[-3:], trange)
 
 def mapClickData2staindex(clickData):
     pts=[]
@@ -264,6 +266,7 @@ def staindex2stadesc(pts):
 external_css = [
     "https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
     "/static/boxed.css",
+    "https://codepen.io/chriddyp/pen/bWLwgP.css",
     "https://fonts.googleapis.com/css?family=Raleway:400,400i,700,700i",
     "https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i",
 ]
@@ -274,5 +277,5 @@ for css in external_css:
 if __name__ == '__main__':
     app.run_server(debug=True, use_debugger=False, use_reloader=True)
     s=stats_astable([1,5])
-    plot_ts([1,5])
+    plot_ts([1,5], [1992,2017])
     print(s)
