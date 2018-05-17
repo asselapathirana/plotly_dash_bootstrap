@@ -21,14 +21,14 @@ import rainproc as rp
 app = dash.Dash('_template App', static_folder='static')
 server = app.server
 
-df = rp.stations() 
+station_df = rp.stations() 
 graph1data = [ go.Scattermapbox(
-        lat=df['LAT'],
-        lon=df['LON'],
+        lat=station_df['LAT'],
+        lon=station_df['LON'],
         mode='markers',
-        text=df['TXT'],
+        text=station_df['TXT'],
         hoverinfo = 'text',
-        customdata = df['STAID'],
+        customdata = station_df['STAID'],
         marker=dict(
             size=5,
         ),
@@ -100,7 +100,7 @@ def plot_ts(pts):
         traces.append(go.Scatter(
             x=data.index,
             y=data['Rainfall_mm'],
-            name=df.iloc[pt]['TXT']+" (trend, p={:4.4f})".format(pval),
+            name=station_df.iloc[pt]['TXT']+" (trend, p={:4.4f})".format(pval),
             mode="markers+lines",
             marker=marker,       
         ))
@@ -130,11 +130,11 @@ def plot_ts(pts):
     }
 
 def resampled(pt):
-    data=rp.resampled(df.iloc[pt]['STAID'], 'Y')
+    data=rp.resampled(station_df.iloc[pt]['STAID'], 'Y')
     return data
 
 
-ind=df[df['STAID']=='RR_STAID000162'].index[0] # De Buit (NL)
+init_ind=station_df[station_df['STAID']=='RR_STAID000162'].index[0] # De Buit (NL)
 
 graph2= dcc.Graph(id='stationgraph')
 stat_display = html.Div(id='statdisplay')
@@ -146,9 +146,20 @@ row3 = html.Div([
     html.Div([stat_display]),
     ], className='row')
 
+sdd=dcc.Dropdown(
+    options=[dict(label=x[1], value=x[0]) for x in station_df['TXT'].to_dict().items()],
+    value=[str(init_ind)],
+    multi=True
+)
+
+toolbar = html.Div([
+    html.Div([sdd]),
+    ], className='row')
+
 app.layout = html.Div([  # begin container
     banner,
     row1,
+    toolbar, 
     row2,
     row3,
 ], className="container",
@@ -165,7 +176,7 @@ def display_stats(clickData):
     if (clickData):
         pts = mapClickData2staindex(clickData)
     else:
-        pts=[ind]
+        pts=[init_ind]
     print(stats(pts), file=sys.stderr)
     return stats(pts)
 
@@ -198,23 +209,23 @@ def display_chart(clickData):
     if (clickData):
         pts = mapClickData2staindex(clickData)
     else:
-        pts=[ind]
+        pts=[init_ind]
     return plot_ts(pts)
 
 def mapClickData2staindex(clickData):
     pts=[]
     for pt in clickData['points']:
-        pts.append(df[df['STAID']==pt['customdata']].index[0])
+        pts.append(station_df[station_df['STAID']==pt['customdata']].index[0])
     return pts
 
 def staindex2stadesc(pts):
     res={'Station':[], 'Country':[], 'Elevation':[], 'LON':[], 'LAT':[],}
     for pt in pts:
-        res['Station'].append(df.iloc[pt]['STANAME'])
-        res['Country'].append(pycountry.countries.get(alpha_3=df.iloc[pt]['CN']).name)
-        res['Elevation'].append('{:5.0f}'.format(df.iloc[pt]['HGHT']))
-        res['LON'].append('{:5.5f}'.format(df.iloc[pt]['LON']))
-        res['LAT'].append('{:5.5f}'.format(df.iloc[pt]['LAT']))
+        res['Station'].append(station_df.iloc[pt]['STANAME'])
+        res['Country'].append(pycountry.countries.get(alpha_3=station_df.iloc[pt]['CN']).name)
+        res['Elevation'].append('{:5.0f}'.format(station_df.iloc[pt]['HGHT']))
+        res['LON'].append('{:5.5f}'.format(station_df.iloc[pt]['LON']))
+        res['LAT'].append('{:5.5f}'.format(station_df.iloc[pt]['LAT']))
     return res
 
 
