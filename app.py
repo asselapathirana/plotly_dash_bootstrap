@@ -79,6 +79,7 @@ row1 = html.Div([  # row 1 start ([
 
 
 def plot_ts(pts):
+    pts=[int(pt) for pt in pts]
     traces =[]
     for i,pt in enumerate(pts):
         data = resampled(pt)
@@ -169,19 +170,15 @@ app.layout = html.Div([  # begin container
 
 @app.callback(
     dash.dependencies.Output('statdisplay', 'children'),
-    [dash.dependencies.Input('stationmap', 'clickData'),
-     ]
+    [dash.dependencies.Input('station_dd', 'value'),
+    ]
 )
-def display_stats(clickData):
-    print("STAT:", clickData, file=sys.stderr)
-    if (clickData):
-        pts = mapClickData2staindex(clickData)
-    else:
-        pts=[init_ind]
-    print(stats(pts), file=sys.stderr)
-    return stats(pts)
+def display_stats(value):
+    print("STAT:", value, file=sys.stderr)
+    return stats(value)
 
 def stats(pts):
+    pts=[int(pt) for pt in pts]
     dfs=[]
     for pt in pts:
         dfs.append(resampled(pt))
@@ -198,15 +195,14 @@ def stats(pts):
             #html.Tr( [html.Td("gilbert"), html.Td("strang"), html.Td("gb@algebra.com")] )
         
     )
-    
 
 @app.callback(
     dash.dependencies.Output('station_dd', 'value'),
-   [dash.dependencies.Input('stationmap', 'clickData'),
+   [dash.dependencies.Input('stationmap', 'clickData')
     ],
    [dash.dependencies.State('station_dd','value')]
 )
-def update_station_dd(clickData,dd_value):
+def update_station_dd(clickData, dd_value):
     if (clickData):
         pts = mapClickData2staindex(clickData)
     else:
@@ -215,16 +211,12 @@ def update_station_dd(clickData,dd_value):
 
 @app.callback(
    dash.dependencies.Output('stationgraph', 'figure'),
-   [dash.dependencies.Input('stationmap', 'clickData'),
+   [dash.dependencies.Input('station_dd', 'value'),
     ]
 )
-def display_chart(clickData):
-    print("CHART:", clickData, file=sys.stderr)
-    if (clickData):
-        pts = mapClickData2staindex(clickData)
-    else:
-        pts=[init_ind]
-    return plot_ts(pts)
+def display_chart(value):
+    print("CHART:", value, file=sys.stderr)
+    return plot_ts(value)
 
 def mapClickData2staindex(clickData):
     pts=[]
