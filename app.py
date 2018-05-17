@@ -147,6 +147,7 @@ row3 = html.Div([
     ], className='row')
 
 sdd=dcc.Dropdown(
+    id = 'station_dd',
     options=[dict(label=x[1], value=x[0]) for x in station_df['TXT'].to_dict().items()],
     value=[str(init_ind)],
     multi=True
@@ -198,6 +199,19 @@ def stats(pts):
         
     )
     
+
+@app.callback(
+    dash.dependencies.Output('station_dd', 'value'),
+   [dash.dependencies.Input('stationmap', 'clickData'),
+    ],
+   [dash.dependencies.State('station_dd','value')]
+)
+def update_station_dd(clickData,dd_value):
+    if (clickData):
+        pts = mapClickData2staindex(clickData)
+    else:
+        pts=[]
+    return (dd_value+pts)[-3:]
 
 @app.callback(
    dash.dependencies.Output('stationgraph', 'figure'),
