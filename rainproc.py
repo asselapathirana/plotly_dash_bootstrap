@@ -67,6 +67,8 @@ def stats(dfs):
         years="{:10d}".format(ds['Rainfall_mm'].shape[0]),
         maxv="{:8.1f}".format(ds['Rainfall_mm'].max()),
         minv="{:8.1f}".format(ds['Rainfall_mm'].min()),
+        maxt=ds.index.min().to_pydatetime().year,
+        mint=ds.index.max().to_pydatetime().year,
         ))
     resd={}
     for k in res[0]:

@@ -154,8 +154,11 @@ sdd=dcc.Dropdown(
     multi=True
 )
 
+timeslidediv=html.Div([dcc.RangeSlider(id='time_range')], id='slider_container')
+
 toolbar = html.Div([
     html.Div([sdd]),
+    timeslidediv,
     ], className='row')
 
 app.layout = html.Div([  # begin container
@@ -167,6 +170,25 @@ app.layout = html.Div([  # begin container
 ], className="container",
 )  # end container
 
+@app.callback(
+    dash.dependencies.Output('slider_container', 'children'),
+    [dash.dependencies.Input('station_dd', 'value'),
+    ]
+)
+def new_slider(value):
+    vs=[int(v) for v in value]
+    stat=stat_from_indexes(vs)
+    print("XXX:",stat['mint'], file=sys.stderr)
+    mint=min([float(x) for x in stat['mint']])
+    maxt=max([float(x) for x in stat['maxt']])
+    sli=dcc.RangeSlider(
+        id='time_range',
+            min=mint,
+            max=maxt,
+            step=1,
+            value=[mint,maxt],
+    )    
+    return sli
 
 @app.callback(
     dash.dependencies.Output('statdisplay', 'children'),
@@ -175,26 +197,24 @@ app.layout = html.Div([  # begin container
 )
 def display_stats(value):
     print("STAT:", value, file=sys.stderr)
-    return stats(value[-3:])
+    return stats_astable(value[-3:])
 
-def stats(pts):
+def stats_astable(pts):
+    alls=stat_from_indexes(pts)
+    
+    return html.Table(
+        [html.Tr( [html.Th(x) for x in alls.keys()] )] 
+        + 
+        [ html.Tr([  html.Td(alls[k][i]) for k in alls.keys()]) for i in range(len(list(alls.values())[0]))]
+    )
+
+def stat_from_indexes(pts):
     pts=[int(pt) for pt in pts]
     dfs=[]
     for pt in pts:
         dfs.append(resampled(pt))
     alls={**staindex2stadesc(pts), **rp.stats(dfs)}
-    
-    return html.Table(
-        [
-            html.Tr( [html.Th(x) for x in alls.keys()] )
-        ] +
-        
-        [ html.Tr([  html.Td(alls[k][i]) for k in alls.keys()]) for i in range(len(list(alls.values())[0]))]
-            #for i in alls.values()[0]:
-            #html.Tr( [html.Td("walter"), html.Td("rudin"), html.Td("wr@analysis.com")] ),
-            #html.Tr( [html.Td("gilbert"), html.Td("strang"), html.Td("gb@algebra.com")] )
-        
-    )
+    return alls
 
 @app.callback(
     dash.dependencies.Output('station_dd', 'value'),
@@ -248,6 +268,6 @@ for css in external_css:
 
 if __name__ == '__main__':
     app.run_server(debug=True, use_debugger=False, use_reloader=True)
-    s=stats([1,5])
+    s=stats_astable([1,5])
     plot_ts([1,5])
     print(s)
