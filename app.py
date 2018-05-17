@@ -175,7 +175,7 @@ app.layout = html.Div([  # begin container
 )
 def display_stats(value):
     print("STAT:", value, file=sys.stderr)
-    return stats(value)
+    return stats(value[-3:])
 
 def stats(pts):
     pts=[int(pt) for pt in pts]
@@ -216,7 +216,7 @@ def update_station_dd(clickData, dd_value):
 )
 def display_chart(value):
     print("CHART:", value, file=sys.stderr)
-    return plot_ts(value)
+    return plot_ts(value[-3:])
 
 def mapClickData2staindex(clickData):
     pts=[]
