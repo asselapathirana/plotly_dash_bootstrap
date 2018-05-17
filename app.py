@@ -179,14 +179,19 @@ def new_slider(value):
     vs=[int(v) for v in value]
     stat=stat_from_indexes(vs)
     print("XXX:",stat['mint'], file=sys.stderr)
-    mint=min([float(x) for x in stat['mint']])
-    maxt=max([float(x) for x in stat['maxt']])
+    mint=min(stat['mint'])
+    maxt=max(stat['maxt'])
     sli=dcc.RangeSlider(
         id='time_range',
             min=mint,
             max=maxt,
             step=1,
             value=[mint,maxt],
+            marks={
+                mint: str(mint),
+                maxt: str(maxt),                
+            },
+            
     )    
     return sli
 
