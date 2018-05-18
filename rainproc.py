@@ -4,7 +4,7 @@ import numpy as np
 import statsmodels.formula.api as smf
 import datetime
 
-notmissingthres = dict(Y=365*.9, M=30*.9, W=7*.9, Q=365/4*.9)
+notmissingthres = {"Y":365*.9, "M":30*.9, "W":7*.9, "Q":365/4*.9, "24H":.9}
 hdf_store = './data/ECA_ALL.hdf'
 #COMPRESS = 'blosc:snappy'
 #COMPRESS = 'bzip2'
@@ -118,7 +118,7 @@ def pre_process():
     
 if __name__ == "__main__":
     # pre_process() # takes several minutes (10min?) 
-    freq="Y"
+    freq="24H"
     staid = 'RR_STAID000094'
     ds = resampled(staid, freq)
     ds2 = resampled('RR_STAID011416', freq)

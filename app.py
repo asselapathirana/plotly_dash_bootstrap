@@ -79,12 +79,12 @@ row1 = html.Div([  # row 1 start ([
 ], className="row")  # row 1 end ])
 
 
-def plot_ts(pts, trange=[]):
+def plot_ts(pts, trange, freq):
     print("TRANGE:", trange, file=sys.stderr)
     pts=[int(pt) for pt in pts]
     traces =[]
     for i,pt in enumerate(pts):
-        data = resampled(pt)
+        data = resampled(pt,freq)
         data = _subset_to_range(trange, data)
         marker = dict(
             size = 5,
@@ -122,9 +122,7 @@ def plot_ts(pts, trange=[]):
         yaxis=dict(
             title="Annual Total Precipitation (mm)",
             ),
-
         margin=go.Margin(l=50, r=10, b=50, t=30, pad=4),
-
     )    
         
     return {
@@ -137,8 +135,8 @@ def _subset_to_range(trange, data):
         data=data['{}-01-01'.format(trange[0]):'{}-01-01'.format(trange[1]+1)]
     return data
 
-def resampled(pt):
-    data=rp.resampled(station_df.iloc[pt]['STAID'], 'Y')
+def resampled(pt, freq):
+    data=rp.resampled(station_df.iloc[pt]['STAID'], freq)
     return data
 
 
@@ -162,9 +160,20 @@ sdd=dcc.Dropdown(
 )
 
 timeslidediv=html.Div([dcc.RangeSlider(id='time_range')], id='slider_container', className='slider-box')
-
+freqdd=html.Div([
+    dcc.Dropdown(
+        id='freqdd',
+        options=[
+            {'label': 'Yearly', 'value': 'Y'},
+            {'label': 'Monthly', 'value': 'M'},
+           # {'label': 'Daily', 'value': '24H'}
+        ],
+        value='Y',
+    )
+])
 toolbar = html.Div([
     html.Div([sdd]),
+    freqdd,
     timeslidediv,
     ], className='row')
 
@@ -183,7 +192,7 @@ app.layout = html.Div([  # begin container
     ]
 )
 def new_slider(value):
-    dfs=[resampled(int(v)) for v in value]
+    dfs=[resampled(int(v),'Y') for v in value] # keep this annual. We just need limits as years. 
     mint,maxt=rp.get_timelimits(dfs)
     
     marks={int(x):str(int(x)) for x in rp.auto_tick([mint,maxt],max_tick=10)}
@@ -209,26 +218,27 @@ def new_slider(value):
 @app.callback(
     dash.dependencies.Output('statdisplay', 'children'),
     [dash.dependencies.Input('station_dd', 'value'),
-     dash.dependencies.Input('time_range','value')
+     dash.dependencies.Input('time_range','value'),
+     dash.dependencies.Input('freqdd','value')
     ]
 )
-def display_stats(value, trange):
+def display_stats(value, trange, freq):
     print("STAT:", value, file=sys.stderr)
-    return stats_astable(value[-3:], trange)
+    return stats_astable(value[-3:], trange, freq)
 
-def stats_astable(pts, trange=[]):
-    alls=stat_from_indexes(pts, trange)   
+def stats_astable(pts, trange, freq):
+    alls=stat_from_indexes(pts, trange, freq)   
     return html.Table(
         [html.Tr( [html.Th(x) for x in alls.keys()] )] 
         + 
         [ html.Tr([  html.Td(alls[k][i]) for k in alls.keys()]) for i in range(len(list(alls.values())[0]))],
     style={'width': "100%", 'table-layout':'fixed'})
 
-def stat_from_indexes(pts, trange=[]):
+def stat_from_indexes(pts, trange, freq):
     pts=[int(pt) for pt in pts]
     dfs=[]
     for pt in pts:
-        data=resampled(pt)
+        data=resampled(pt, freq)
         data=_subset_to_range(trange, data)
         dfs.append(data)
     alls={**staindex2stadesc(pts), **rp.stats(dfs)}
@@ -250,12 +260,13 @@ def update_station_dd(clickData, dd_value):
 @app.callback(
    dash.dependencies.Output('stationgraph', 'figure'),
    [dash.dependencies.Input('station_dd', 'value'),
-    dash.dependencies.Input('time_range','value')
+    dash.dependencies.Input('time_range','value'),
+    dash.dependencies.Input('freqdd','value')
     ],
 )
-def display_chart(value, trange):
+def display_chart(value, trange,freq):
     #print("CHART:", value, file=sys.stderr)
-    return plot_ts(value[-3:], trange)
+    return plot_ts(value[-3:], trange, freq)
 
 def mapClickData2staindex(clickData):
     pts=[]
@@ -287,6 +298,6 @@ for css in external_css:
 
 if __name__ == '__main__':
     app.run_server(debug=True, use_debugger=False, use_reloader=True)
-    s=stats_astable([1,5])
-    plot_ts([1,5], [1992,2017])
+    s=stats_astable([1,5],[],'Y')
+    plot_ts([1,5], [1992,2017], 'Y')
     print(s)
