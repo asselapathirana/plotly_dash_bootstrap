@@ -80,12 +80,12 @@ row1 = html.Div([  # row 1 start ([
 ], className="row")  # row 1 end ])
 
 
-def plot_ts(pts, trange, freq):
+def plot_ts(pts, trange, freq, summ):
     print("TRANGE:", trange, file=sys.stderr)
     pts=[int(pt) for pt in pts]
     traces =[]
     for i,pt in enumerate(pts):
-        data = resampled(pt,freq)
+        data = resampled(pt,freq, summ)
         data = _subset_to_range(trange, data)
         marker = dict(
             size = 5,
@@ -136,8 +136,8 @@ def _subset_to_range(trange, data):
         data=data['{}-01-01'.format(trange[0]):'{}-01-01'.format(trange[1]+1)]
     return data
 
-def resampled(pt, freq):
-    data=rp.resampled(station_df.iloc[pt]['STAID'], freq)
+def resampled(pt, freq, summ):
+    data=rp.resampled(station_df.iloc[pt]['STAID'], freq, summ)
     return data
 
 
@@ -172,8 +172,21 @@ freqdd=html.Div([
         value='Y',
     )
 ])
+
+summarydd=html.Div([
+    dcc.Dropdown(
+        id='summarydd',
+        options=[
+            {'label': 'Total Rainfalls', 'value': rp.TOTAL},
+            {'label': 'Maximum Rainfalls', 'value': rp.MAX},
+        ],
+        value=rp.TOTAL,
+    )    
+])
+
 toolbar = html.Div([
     html.Div([sdd]),
+    summarydd,
     freqdd,
     timeslidediv,
     ], className='row')
@@ -206,17 +219,18 @@ app.layout = html.Div([  # begin container
     dash.dependencies.Output('download-link', 'href'),
     [dash.dependencies.Input('station_dd', 'value'),
      dash.dependencies.Input('time_range','value'),
-     dash.dependencies.Input('freqdd','value')
+     dash.dependencies.Input('freqdd','value'), 
+     dash.dependencies.Input('summarydd', 'value')
      ])
-def update_download_link(value, trange, freq):
-    dff=_dfs_list_as_one_df(value, trange, freq)
+def update_download_link(value, trange, freq, summarydd):
+    dff=_dfs_list_as_one_df(value, trange, freq, summarydd)
     csv_string = dff.to_csv(index=True, encoding='utf-8')
     csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
     return csv_string
 
-def _dfs_list_as_one_df(value, trange, freq):
+def _dfs_list_as_one_df(value, trange, freq, summarydd):
     pts=[int(pt) for pt in value[-3:]]
-    dfs=_df_list(pts, freq, trange)
+    dfs=_df_list(pts, freq, trange, summarydd)
     for i in range(len(dfs)):
         dfs[i]=dfs[i].rename(columns={"Rainfall_mm":station_df.iloc[pts[i]]['STANAME']})
     dff=dfs[0] # first
@@ -231,7 +245,7 @@ def _dfs_list_as_one_df(value, trange, freq):
     ]
 )
 def new_slider(value):
-    dfs=[resampled(int(v),'Y') for v in value] # keep this annual. We just need limits as years. 
+    dfs=[resampled(int(v),'Y', rp.TOTAL) for v in value] # keep this annual. We just need limits as years. 
     mint,maxt=rp.get_timelimits(dfs)
     
     marks={int(x):str(int(x)) for x in rp.auto_tick([mint,maxt],max_tick=10)}
@@ -258,31 +272,33 @@ def new_slider(value):
     dash.dependencies.Output('statdisplay', 'children'),
     [dash.dependencies.Input('station_dd', 'value'),
      dash.dependencies.Input('time_range','value'),
-     dash.dependencies.Input('freqdd','value')
+     dash.dependencies.Input('freqdd','value'),
+     dash.dependencies.Input('summarydd','value'),
+     
     ]
 )
-def display_stats(value, trange, freq):
+def display_stats(value, trange, freq, summ):
     print("STAT:", value, file=sys.stderr)
-    return stats_astable(value[-3:], trange, freq)
+    return stats_astable(value[-3:], trange, freq, summ)
 
-def stats_astable(pts, trange, freq):
-    alls=stat_from_indexes(pts, trange, freq)   
+def stats_astable(pts, trange, freq, summ):
+    alls=stat_from_indexes(pts, trange, freq, summ)   
     return html.Table(
         [html.Tr( [html.Th(x) for x in alls.keys()] )] 
         + 
         [ html.Tr([  html.Td(alls[k][i]) for k in alls.keys()]) for i in range(len(list(alls.values())[0]))],
     style={'width': "100%", 'table-layout':'fixed'})
 
-def stat_from_indexes(pts, trange, freq):
+def stat_from_indexes(pts, trange, freq, summ):
     pts=[int(pt) for pt in pts]
-    dfs=_df_list(pts, freq, trange)
+    dfs=_df_list(pts, freq, trange, summ)
     alls={**staindex2stadesc(pts), **rp.stats(dfs)}
     return alls
 
-def _df_list(pts, freq, trange):
+def _df_list(pts, freq, trange, summ):
     dfs=[]
     for pt in pts:
-        data=resampled(pt, freq)
+        data=resampled(pt, freq, summ)
         data=_subset_to_range(trange, data)
         dfs.append(data)
     return dfs
@@ -304,12 +320,13 @@ def update_station_dd(clickData, dd_value):
    dash.dependencies.Output('stationgraph', 'figure'),
    [dash.dependencies.Input('station_dd', 'value'),
     dash.dependencies.Input('time_range','value'),
-    dash.dependencies.Input('freqdd','value')
+    dash.dependencies.Input('freqdd','value'), 
+    dash.dependencies.Input('summarydd','value'),
     ],
 )
-def display_chart(value, trange,freq):
+def display_chart(value, trange,freq, summ):
     #print("CHART:", value, file=sys.stderr)
-    return plot_ts(value[-3:], trange, freq)
+    return plot_ts(value[-3:], trange, freq, summ)
 
 def mapClickData2staindex(clickData):
     pts=[]

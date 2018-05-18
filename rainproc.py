@@ -13,7 +13,8 @@ COMPRESS = 'blosc:zlib'
 #COMPRESS = 'bzip2'
 COMPLEVEVL = 9
 COMP=dict(complib=COMPRESS, complevel=COMPLEVEVL, format='table',  )
-
+TOTAL=1
+MAX = 2
 
 def auto_tick(data_range, max_tick=10, tf_inside=False):
     """
@@ -57,12 +58,17 @@ def rainfall2hdf():
             read_rain(hdfstore, 'stations/{}'.format(stnid), './data/eca_blend_rr/{}.txt'.format(stnid))
             #ct+=1
             #if (ct>10): break;
-def resampled(staid,freq):
+def resampled(staid,freq, summ):
     data=pd.read_hdf(hdf_store,'stations/{}'.format(staid))
-    ds=data.resample(freq).apply(lambda x: 
+    if summ==TOTAL:
+        return data.resample(freq).apply(lambda x: 
                                  x.sum(skipna=True) if x.notnull().sum() > notmissingthres[freq] 
                                  else np.NaN)
-    return ds    
+    if summ==MAX:
+        return data.resample(freq).apply(lambda x: 
+                                         x.max(skipna=True) if x.notnull().sum() > notmissingthres[freq] 
+                                     else np.NaN)        
+    return None # error   
 
 def linear_fit(data, xcol='ndates', ycol='Rainfall_mm'):
     data['ndates'] = (data.index-pd.to_datetime('1800-01-01')).astype('timedelta64[D]')
@@ -118,10 +124,12 @@ def pre_process():
     
 if __name__ == "__main__":
     # pre_process() # takes several minutes (10min?) 
-    freq="24H"
+    freq="Y"
     staid = 'RR_STAID000094'
-    ds = resampled(staid, freq)
-    ds2 = resampled('RR_STAID011416', freq)
+    ds = resampled(staid, freq, summ=TOTAL)
+    
+    dm = resampled(staid, freq, summ=MAX)
+    ds2 = resampled('RR_STAID011416', summ=TOTAL)
     get_timelimits([ds,ds2])
     lf=linear_fit(ds)
     print(ds)
