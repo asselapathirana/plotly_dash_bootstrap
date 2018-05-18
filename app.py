@@ -9,6 +9,7 @@ import plotly.graph_objs as go
 from plotly.colors import DEFAULT_PLOTLY_COLORS as COLORS
 import pycountry
 import datetime
+import urllib.parse 
 
 import pandas as pd
 import pycountry
@@ -177,14 +178,52 @@ toolbar = html.Div([
     timeslidediv,
     ], className='row')
 
+
+downloadl = html.A(
+     'Download Data',
+        id='download-link',
+        download="rawdata.csv",
+        href="",
+        target="_blank"
+ )
+
+row4=html.Div([
+    html.Div([downloadl])
+    ], className='row')
+
 app.layout = html.Div([  # begin container
     banner,
     row1,
     toolbar, 
     row2,
     row3,
+    row4,
 ], className="container",
 )  # end container
+
+
+@app.callback(
+    dash.dependencies.Output('download-link', 'href'),
+    [dash.dependencies.Input('station_dd', 'value'),
+     dash.dependencies.Input('time_range','value'),
+     dash.dependencies.Input('freqdd','value')
+     ])
+def update_download_link(value, trange, freq):
+    dff=_dfs_list_as_one_df(value, trange, freq)
+    csv_string = dff.to_csv(index=True, encoding='utf-8')
+    csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+    return csv_string
+
+def _dfs_list_as_one_df(value, trange, freq):
+    pts=[int(pt) for pt in value[-3:]]
+    dfs=_df_list(pts, freq, trange)
+    for i in range(len(dfs)):
+        dfs[i]=dfs[i].rename(columns={"Rainfall_mm":station_df.iloc[pts[i]]['STANAME']})
+    dff=dfs[0] # first
+    for i in range(1,len(dfs)):
+        dff=dff.join(dfs[i],rsuffix='_{:1d}'.format(i), how='outer')
+    return dff
+
 
 @app.callback(
     dash.dependencies.Output('slider_container', 'children'),
@@ -236,13 +275,17 @@ def stats_astable(pts, trange, freq):
 
 def stat_from_indexes(pts, trange, freq):
     pts=[int(pt) for pt in pts]
+    dfs=_df_list(pts, freq, trange)
+    alls={**staindex2stadesc(pts), **rp.stats(dfs)}
+    return alls
+
+def _df_list(pts, freq, trange):
     dfs=[]
     for pt in pts:
         data=resampled(pt, freq)
         data=_subset_to_range(trange, data)
         dfs.append(data)
-    alls={**staindex2stadesc(pts), **rp.stats(dfs)}
-    return alls
+    return dfs
 
 @app.callback(
     dash.dependencies.Output('station_dd', 'value'),
@@ -298,6 +341,7 @@ for css in external_css:
 
 if __name__ == '__main__':
     app.run_server(debug=True, use_debugger=False, use_reloader=True)
-    s=stats_astable([1,5],[],'Y')
-    plot_ts([1,5], [1992,2017], 'Y')
+    #s=stats_astable([1,5],[],'Y')
+    #plot_ts([1,5], [1992,2017], 'Y')
+    update_download_link([1], [1992,2017], 'Y')
     print(s)
