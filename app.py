@@ -113,14 +113,14 @@ def plot_ts(pts, trange=[]):
                                 showlegend=False,
                                 marker=marker,))
     layout=go.Layout(
-        title="Annual Rainfall",
+        #title="Annual Rainfall",
         showlegend= True,
         legend=dict(x=.1,y=1.0),
         xaxis=dict(
             title='Date',
             ),
         yaxis=dict(
-            title="Precipitation (mm)",
+            title="Annual Total Precipitation (mm)",
             ),
 
         margin=go.Margin(l=50, r=10, b=50, t=30, pad=4),
@@ -221,8 +221,8 @@ def stats_astable(pts, trange=[]):
     return html.Table(
         [html.Tr( [html.Th(x) for x in alls.keys()] )] 
         + 
-        [ html.Tr([  html.Td(alls[k][i]) for k in alls.keys()]) for i in range(len(list(alls.values())[0]))]
-    )
+        [ html.Tr([  html.Td(alls[k][i]) for k in alls.keys()]) for i in range(len(list(alls.values())[0]))],
+    style={'width': "100%", 'table-layout':'fixed'})
 
 def stat_from_indexes(pts, trange=[]):
     pts=[int(pt) for pt in pts]
@@ -264,13 +264,12 @@ def mapClickData2staindex(clickData):
     return pts
 
 def staindex2stadesc(pts):
-    res={'Station':[], 'Country':[], 'Elevation':[], 'LON':[], 'LAT':[],}
+    res={'Station':[], 'Country':[], 'Elev.':[], 'LON/LAT':[]}
     for pt in pts:
         res['Station'].append(station_df.iloc[pt]['STANAME'])
         res['Country'].append(pycountry.countries.get(alpha_3=station_df.iloc[pt]['CN']).name)
-        res['Elevation'].append('{:5.0f}'.format(station_df.iloc[pt]['HGHT']))
-        res['LON'].append('{:5.5f}'.format(station_df.iloc[pt]['LON']))
-        res['LAT'].append('{:5.5f}'.format(station_df.iloc[pt]['LAT']))
+        res['Elev.'].append('{:4.0f}'.format(station_df.iloc[pt]['HGHT']))
+        res['LON/LAT'].append('{:3.2f}/{:3.2f}'.format(station_df.iloc[pt]['LON'],station_df.iloc[pt]['LAT']))
     return res
 
 
