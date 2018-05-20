@@ -20,6 +20,12 @@ except:
 
 import rainproc as rp
 
+BUTTONSTOREMOVE=['zoomIn2d', 'zoomOut2d', 'sendDataToCloud','hoverCompareCartesian', 
+                 'sendDataToCloud', 'autoScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian', 
+                 'lasso2d', 'select2d', 'pan2d']
+
+CONFIG={'modeBarButtonsToRemove': BUTTONSTOREMOVE, 'displaylogo': False,} 
+
 app = dash.Dash('_template App', static_folder='static')
 server = app.server
 
@@ -63,9 +69,7 @@ graph1= dcc.Graph(
         figure=dict(data=graph1data,
                     layout=graph1layout,
                     ),
-        config={
-            #'modeBarButtonsToRemove': ['pan2d', 'lasso2d']
-        }
+        config=CONFIG
 )
 
 banner = html.Div([
@@ -121,7 +125,7 @@ def plot_ts(pts, trange, freq, summ):
             title='Date',
             ),
         yaxis=dict(
-            title="Annual Total Precipitation (mm)",
+            title="Precipitation (mm)",
             ),
         margin=go.Margin(l=50, r=10, b=50, t=30, pad=4),
     )    
@@ -143,7 +147,7 @@ def resampled(pt, freq, summ):
 
 init_ind=station_df[station_df['STAID']=='RR_STAID000162'].index[0] # De Buit (NL)
 
-graph2= dcc.Graph(id='stationgraph')
+graph2= dcc.Graph(id='stationgraph', config=CONFIG)
 stat_display = html.Div(id='statdisplay')
 
 row2 = html.Div([

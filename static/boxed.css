@@ -71,10 +71,10 @@
 .slider-box {
      top: 5px;
       z-index: 1000000;
-      width: 65%;
+      width: 90%;
       position: relative;
       margin: 10px auto;
-     left: 25px;
+     left: 20px;
 } 
   
 
