@@ -26,7 +26,7 @@ BUTTONSTOREMOVE=['zoomIn2d', 'zoomOut2d', 'sendDataToCloud','hoverCompareCartesi
 
 CONFIG={'modeBarButtonsToRemove': BUTTONSTOREMOVE, 'displaylogo': False,} 
 
-app = dash.Dash('_template App', static_folder='static')
+app = dash.Dash('Rainfall trends in and around Europe')
 server = app.server
 
 station_df = rp.stations() 
@@ -73,10 +73,11 @@ graph1= dcc.Graph(
 )
 
 banner = html.Div([
-    html.H2("_template"),
-    html.Img(src="/static/apLogo2.png"),
+    html.H2("Rainfall patterns in and around Europe"),
+    html.Img(src=app.get_asset_url("apLogo2.png")),
 ], className='banner')
 
+name = html.Div([html.H5("Assela Pathirana      (source: European Climate Assessment & Dataset)")], className='name')
 row1 = html.Div([  # row 1 start ([
         html.Div(
             [graph1],
@@ -210,6 +211,7 @@ row4=html.Div([
 
 app.layout = html.Div([  # begin container
     banner,
+    name,
     row1,
     toolbar, 
     row2,
@@ -351,7 +353,7 @@ def staindex2stadesc(pts):
 # load the styles
 external_css = [
     "https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
-    "/static/boxed.css",
+    app.get_asset_url("boxed_.css"),
     "https://codepen.io/chriddyp/pen/bWLwgP.css",
     "https://fonts.googleapis.com/css?family=Raleway:400,400i,700,700i",
     "https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i",
@@ -361,8 +363,21 @@ for css in external_css:
     app.css.append_css({"external_url": css})
 
 if __name__ == '__main__':
-    app.run_server(debug=True, use_debugger=False, use_reloader=True)
+    import os 
+    import shutil
+    if 'WINGDB_ACTIVE' in os.environ: 
+        app.debug = False 
+        # delete any static files (can keep old css etc. )
+        try:
+            shutil.rmtree("./assets/static")
+        except:
+            pass
+        # also make sure to enable 'debug clild processes' in project properties. 
+    app.run_server(use_reloader=True)     
+    
+    #app.run_server()
+    #app.run_server(debug=True, use_debugger=False, use_reloader=True)
     #s=stats_astable([1,5],[],'Y')
     #plot_ts([1,5], [1992,2017], 'Y')
-    update_download_link([1], [1992,2017], 'Y')
-    print(s)
+    #update_download_link([1], [1992,2017], 'Y')
+    #print(s)

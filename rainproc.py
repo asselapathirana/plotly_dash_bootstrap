@@ -45,7 +45,7 @@ def auto_tick(data_range, max_tick=10, tf_inside=False):
 
 def read_rain(hdfstore, name, file):
     tomm= lambda x: np.NaN if float(x) < 0 else 0.1*float(x) # negative values = missing data
-    df = pd.read_csv(file, names=["Date", "Rainfall_mm"], index_col="Date", usecols=[2,3], header=15, parse_dates=['Date'], converters={3:tomm})
+    df = pd.read_csv(file, names=["Date", "Rainfall_mm"], index_col="Date", usecols=[2,3], header=16, parse_dates=['Date'], converters={3:tomm})
     df.replace(-9999, np.nan, inplace=True)
     hdfstore.put(name,df, **COMP)
 
@@ -123,7 +123,7 @@ def pre_process():
     rainfall2hdf()    
     
 if __name__ == "__main__":
-    # pre_process() # takes several minutes (10min?) 
+    pre_process() # takes several minutes (10min?) 
     freq="Y"
     staid = 'RR_STAID000094'
     ds = resampled(staid, freq, summ=TOTAL)

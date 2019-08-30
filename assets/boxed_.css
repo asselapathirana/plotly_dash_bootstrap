@@ -1,7 +1,7 @@
 
 
  body{
-    font-size: 1.5em;
+    font-size: 1 em;
     line-height: 1.6;
     font-weight: 400;
     font-family: Raleway,HelveticaNeue,"Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -17,7 +17,7 @@
 
 .banner h2{
     color: white;
-    padding-top: 10px;
+    padding-top: 5px;
     margin-left: 2%;
     display: inline-block;
 }
@@ -28,6 +28,14 @@
     right: 10px;
     height: 75px;
 }
+
+.name {
+    height: 2px;
+    margin: 0px -10px 13px;
+    #background-color: rgb(66, 196, 247);
+    border-radius: 2px;
+}
+
 
 .app-box .Title{
   border-bottom: 1px solid rgb(216, 216, 216);
