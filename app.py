@@ -86,12 +86,15 @@ row1 = html.Div([  # row 1 start ([
 
 
 def plot_ts(pts, trange, freq, summ):
-    print("TRANGE:", trange, file=sys.stderr)
+    #print("TRANGE:", trange, file=sys.stderr)
     pts=[int(pt) for pt in pts]
     traces =[]
     for i,pt in enumerate(pts):
+        #print("1:", file=sys.stderr)
         data = resampled(pt,freq, summ)
+        #print("2:", file=sys.stderr)
         data = _subset_to_range(trange, data)
+        #print("3:", file=sys.stderr)
         marker = dict(
             size = 5,
             color=COLORS[i%10],

@@ -3,9 +3,20 @@ import pycountry
 import numpy as np
 import statsmodels.formula.api as smf
 import datetime
+import requests
+import io
+
 
 notmissingthres = {"Y":365*.9, "M":30*.9, "W":7*.9, "Q":365/4*.9, "24H":.9}
-hdf_store = './data/ECA_ALL.hdf'
+hdf_store = '/data/ECA_ALL.hdf'
+
+USEONLINE=True
+
+feather_store_online = 'http://data.pathirana.net/feather/STN{}'
+station_store_online = 'http://data.pathirana.net/feather/stations.feather'    
+feather_store = './data/feather/STN{}'
+station_store = './data/feather/stations.feather'
+
 #COMPRESS = 'blosc:snappy'
 #COMPRESS = 'bzip2'
 #COMPRESS = 'blosc:lz4hc'
@@ -41,25 +52,43 @@ def auto_tick(data_range, max_tick=10, tf_inside=False):
 
     return ticks
 
+def read_rain_feather(feather_store, file):
+    tomm= lambda x: np.NaN if float(x) < 0 else 0.1*float(x) # negative values = missing data
+    df = pd.read_csv(file, names=["Date", "Rainfall_mm"], index_col="Date", usecols=[2,3], header=16, parse_dates=['Date'], converters={3:tomm})
+    df.replace(-9999, np.nan, inplace=True)
+    df.reset_index().to_feather(feather_store)
 
 
-def read_rain(hdfstore, name, file):
+
+def read_rain_HDF(hdfstore, name, file):
     tomm= lambda x: np.NaN if float(x) < 0 else 0.1*float(x) # negative values = missing data
     df = pd.read_csv(file, names=["Date", "Rainfall_mm"], index_col="Date", usecols=[2,3], header=16, parse_dates=['Date'], converters={3:tomm})
     df.replace(-9999, np.nan, inplace=True)
     hdfstore.put(name,df, **COMP)
 
 def rainfall2hdf():
-    stns = pd.read_hdf(hdf_store, 'stations', columns=['STAID'])
-    with  pd.io.pytables.HDFStore(hdf_store,"a") as hdfstore:
-        #ct=0
-        for index, s in stns.iterrows():
-            stnid=s['STAID']
-            read_rain(hdfstore, 'stations/{}'.format(stnid), './data/eca_blend_rr/{}.txt'.format(stnid))
-            #ct+=1
-            #if (ct>10): break;
+    stns = pd.read_feather(station_store, columns=['STAID'])
+    ct=0
+    for index, s in stns.iterrows():
+        stnid=s['STAID']
+        read_rain_feather(feather_store.format(stnid), './data/eca_blend_rr/{}.txt'.format(stnid))
+        ct+=1
+        #if (ct>10): break;
+        
+        
 def resampled(staid,freq, summ):
-    data=pd.read_hdf(hdf_store,'stations/{}'.format(staid))
+    #data=pd.read_hdf(hdf_store,'stations/{}'.format(staid))
+    try:
+        data = pd.read_feather(feather_store.format(staid))
+    except:
+        response = requests.get(feather_store_online.format(staid))
+        
+        f=io.BytesIO(response.content)
+        data = pd.read_feather(f)            
+
+    # set the index to Date
+    data.set_index('Date', inplace=True)
+    
     if summ==TOTAL:
         return data.resample(freq).apply(lambda x: 
                                  x.sum(skipna=True) if x.notnull().sum() > notmissingthres[freq] 
@@ -86,9 +115,9 @@ def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
     stationsdf['STAID']=stationsdf['STAID'].apply('RR_STAID{0:06d}'.format, 8)
     stationsdf['TXT']=stationsdf['STANAME']+" ("+stationsdf['CN']+")"
     
-    with  pd.io.pytables.HDFStore(hdf_store,"w") as hdfstore:
-        hdfstore.put('stations',stationsdf, **COMP)
-        
+    #with  pd.to_fea(station_store,"w") as hdfstore:
+    #    hdfstore.put('stations',stationsdf, **COMP)
+    stationsdf.to_feather(station_store)   
 def stats(dfs):
     res=[]
     for ds in dfs:
@@ -115,7 +144,10 @@ def get_timelimits(dfs):
 
 
 def stations():
-    data=pd.read_hdf(hdf_store,'stations')
+    response = requests.get(station_store_online)
+    
+    f=io.BytesIO(response.content)
+    data = pd.read_feather(f)    
     return data
 
 def pre_process():
@@ -129,7 +161,7 @@ if __name__ == "__main__":
     ds = resampled(staid, freq, summ=TOTAL)
     
     dm = resampled(staid, freq, summ=MAX)
-    ds2 = resampled('RR_STAID011416', summ=TOTAL)
-    get_timelimits([ds,ds2])
+    #ds2 = resampled('RR_STAID011416', summ=TOTAL)
+    #get_timelimits([ds,ds2])
     lf=linear_fit(ds)
     print(ds)
