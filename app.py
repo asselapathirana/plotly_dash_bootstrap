@@ -29,6 +29,24 @@ CONFIG={'modeBarButtonsToRemove': BUTTONSTOREMOVE, 'displaylogo': False,}
 app = dash.Dash('Rainfall trends in and around Europe')
 server = app.server
 
+# function below sets the color based on amount
+def SetColor(x):
+    if(x < .01):
+        return "green"
+    elif(x >= .01 and x < .05):
+        return "yellow"
+    elif(x >= .05):
+        return "red"
+    
+# function below sets the color based on amount
+def SetSize(x):
+    if(x < 20):
+        return 2
+    elif(x >= 20 and x < 100):
+        return 4
+    elif(x >= 100):
+        return 8
+
 station_df = rp.stations() 
 graph1data = [ go.Scattermapbox(
         lat=station_df['LAT'],
@@ -38,7 +56,10 @@ graph1data = [ go.Scattermapbox(
         hoverinfo = 'text',
         customdata = station_df['STAID'],
         marker=dict(
-            size=5,
+            size=list(map(SetSize, station_df['LENGTH'])),
+            color=list(map(SetColor, station_df['MISSING'])),
+            opacity=0.5,
+            
         ),
         
     )]
@@ -77,7 +98,16 @@ banner = html.Div([
     html.Img(src=app.get_asset_url("apLogo2.png")),
 ], className='banner')
 
-name = html.Div([html.H5("Assela Pathirana      (source: European Climate Assessment & Dataset)")], className='name')
+name = html.Div([html.Span("Assela Pathirana      (source: European Climate Assessment & Dataset)"),
+                         html.Br(),
+                         html.Span(' Colors: % missing data (m): '),
+                         html.Span('m < 1', style={'color': 'green'}),
+                         html.Span(', '),
+                         html.Span('1 ≤ m <5', style={'color': 'yellow'}),
+                         html.Span(', '),
+                         html.Span('5 ≤ m', style={'color': 'red'}),
+                         html.Span("   |   Size increases with length of the series")
+                         ], className='name')
 row1 = html.Div([  # row 1 start ([
         html.Div(
             [graph1],
