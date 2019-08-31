@@ -52,11 +52,11 @@ def auto_tick(data_range, max_tick=10, tf_inside=False):
 
     return ticks
 
-def read_rain_feather(feather_store, file):
+def read_rain_from_csv(file):
     tomm= lambda x: np.NaN if float(x) < 0 else 0.1*float(x) # negative values = missing data
     df = pd.read_csv(file, names=["Date", "Rainfall_mm"], index_col="Date", usecols=[2,3], header=16, parse_dates=['Date'], converters={3:tomm})
     df.replace(-9999, np.nan, inplace=True)
-    df.reset_index().to_feather(feather_store)
+    return df.reset_index()
 
 
 
@@ -66,14 +66,15 @@ def read_rain_HDF(hdfstore, name, file):
     df.replace(-9999, np.nan, inplace=True)
     hdfstore.put(name,df, **COMP)
 
-def rainfall2hdf():
+def rainfallcsv2feather():
     stns = pd.read_feather(station_store, columns=['STAID'])
     ct=0
     for index, s in stns.iterrows():
         stnid=s['STAID']
-        read_rain_feather(feather_store.format(stnid), './data/eca_blend_rr/{}.txt'.format(stnid))
+        fs=feather_store.format(stnid)
+        read_rain_from_csv( './data/eca_blend_rr/{}.txt'.format(stnid)).to_feather(fs)
         ct+=1
-        #if (ct>10): break;
+        if (ct>10): break;
         
         
 def resampled(staid,freq, summ):
@@ -121,18 +122,21 @@ def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
 def stats(dfs):
     res=[]
     for ds in dfs:
-        res.append(dict(
-        missing='{:.2%}'.format(ds['Rainfall_mm'].isnull().sum()/ds['Rainfall_mm'].shape[0]),
-        mean="{:8.2f}".format(ds['Rainfall_mm'].mean()),
-        std="{:8.2f}".format(ds['Rainfall_mm'].std()),
-        length="{:10d}".format(ds['Rainfall_mm'].shape[0]),
-        maxv="{:8.1f}".format(ds['Rainfall_mm'].max()),
-        minv="{:8.1f}".format(ds['Rainfall_mm'].min()),
-        ))
+        res.append(get_stat_for_dataset(ds))
     resd={}
     for k in res[0]:
         resd[k] = tuple(d[k] for d in res)    
     return resd
+
+def get_stat_for_dataset(ds):
+    return dict(
+    missing='{:.2%}'.format(ds['Rainfall_mm'].isnull().sum()/ds['Rainfall_mm'].shape[0]),
+    mean="{:8.2f}".format(ds['Rainfall_mm'].mean()),
+    std="{:8.2f}".format(ds['Rainfall_mm'].std()),
+    length="{:10d}".format(ds['Rainfall_mm'].shape[0]),
+    maxv="{:8.1f}".format(ds['Rainfall_mm'].max()),
+    minv="{:8.1f}".format(ds['Rainfall_mm'].min()),
+    )
  
 def get_timelimits(dfs):
     maxt=[]
@@ -150,9 +154,29 @@ def stations():
     data = pd.read_feather(f)    
     return data
 
+def add_stats_to_stations():
+    """Calculate missing data % and legnth of each series and append to stations df"""
+    stns = pd.read_feather(station_store)
+    ct=0
+    stns['LENGTH']=np.nan
+    stns['MISSING']=np.nan
+    for index, s in stns.iterrows():
+        stnid=s['STAID']
+        df=read_rain_from_csv('./data/eca_blend_rr/{}.txt'.format(stnid))
+        missing=df['Rainfall_mm'].isnull().sum()/df['Rainfall_mm'].shape[0]
+        length=df['Rainfall_mm'].shape[0]/360.  # convert to years.
+        stns.iloc[index, stns.columns.get_loc('LENGTH')] = length
+        stns.iloc[index, stns.columns.get_loc('MISSING')] = missing
+
+        ct+=1
+        if (ct>10): break;
+
+    stns.to_feather(station_store) 
+
 def pre_process():
     format_stations()
-    rainfall2hdf()    
+    rainfallcsv2feather() 
+    add_stats_to_stations()
     
 if __name__ == "__main__":
     pre_process() # takes several minutes (10min?) 
