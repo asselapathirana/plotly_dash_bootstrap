@@ -1,7 +1,7 @@
 
 
  body{
-    font-size: 1 em;
+    font-size: 1em;
     line-height: 1.6;
     font-weight: 400;
     font-family: Raleway,HelveticaNeue,"Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -84,6 +84,12 @@
       margin: 10px auto;
      left: 20px;
 } 
+
+table {
+    text-align: left;
+}
+td{
+    font-size: 0.7em;}
   
 
 

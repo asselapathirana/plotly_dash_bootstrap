@@ -125,7 +125,7 @@ def stats(dfs):
         missing='{:.2%}'.format(ds['Rainfall_mm'].isnull().sum()/ds['Rainfall_mm'].shape[0]),
         mean="{:8.2f}".format(ds['Rainfall_mm'].mean()),
         std="{:8.2f}".format(ds['Rainfall_mm'].std()),
-        years="{:10d}".format(ds['Rainfall_mm'].shape[0]),
+        length="{:10d}".format(ds['Rainfall_mm'].shape[0]),
         maxv="{:8.1f}".format(ds['Rainfall_mm'].max()),
         minv="{:8.1f}".format(ds['Rainfall_mm'].min()),
         ))
