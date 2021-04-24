@@ -111,7 +111,14 @@ def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
         return v[0]+v[1]/60.+v[2]/3600.
     country2to3 = lambda x: pycountry.countries.get(alpha_2=x).alpha_3
     strp=lambda x: x.strip()
-    stationsdf = pd.read_csv(stfile, header=13, converters={1:strp, 2:country2to3, 3:dms2dd, 4:dms2dd})
+    found=False
+    with open(stfile+".out", 'w') as ofile:
+        with open(stfile) as myFile:
+            for num, line in enumerate(myFile, 1):
+                if 'STAID,STANAME' in line:
+                    found=True
+                if (found) and line.strip()!="": ofile.write(line)
+    stationsdf = pd.read_csv(stfile+".out", sep=',', converters={1:strp, 2:country2to3, 3:dms2dd, 4:dms2dd})
     stationsdf.rename(inplace=True, columns=lambda x: x.strip())
     stationsdf['STAID']=stationsdf['STAID'].apply('RR_STAID{0:06d}'.format, 8)
     stationsdf['TXT']=stationsdf['STANAME']+" ("+stationsdf['CN']+")"
