@@ -125,7 +125,7 @@ def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
     
     #with  pd.to_fea(station_store,"w") as hdfstore:
     #    hdfstore.put('stations',stationsdf, **COMP)
-    stationsdf.to_feather(station_store)   
+    stationsdf.reset_index().to_feather(station_store)   
 
 def clean_data(stfile):
     found=False
