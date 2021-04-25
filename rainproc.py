@@ -119,7 +119,7 @@ def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
     clean_data(stfile)
     stationsdf = pd.read_csv(stfile+".out", sep=',', converters={1:strp, 2:country2to3, 3:dms2dd, 4:dms2dd})
     stationsdf.rename(inplace=True, columns=lambda x: x.strip())
-    stationdf.dropna(axis=0,  inplace=True)
+    stationsdf.dropna(axis=0,  inplace=True)
     stationsdf['STAID']=stationsdf['STAID'].apply('RR_STAID{0:06d}'.format, 8)
     stationsdf['TXT']=stationsdf['STANAME']+" ("+stationsdf['CN']+")"
     
