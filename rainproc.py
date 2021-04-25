@@ -181,12 +181,12 @@ def add_stats_to_stations():
         stnid=s['STAID']
         df=read_rain_from_csv('./data/eca_blend_rr/{}.txt'.format(stnid))
         missing=df['Rainfall_mm'].isnull().sum()/df['Rainfall_mm'].shape[0]
+        print(missing)
         length=df['Rainfall_mm'].shape[0]/360.  # convert to years.
         stns.iloc[index, stns.columns.get_loc('LENGTH')] = length
         stns.iloc[index, stns.columns.get_loc('MISSING')] = missing
         stns.iloc[index, stns.columns.get_loc('TXT')] = s['TXT'] +  ' ({:.0f}y with m={:.3%})'.format(length, missing)
         ct+=1
-        if (ct>10): break;
 
     stns.to_feather(station_store) 
 
