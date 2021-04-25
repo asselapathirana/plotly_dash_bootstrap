@@ -2,7 +2,6 @@ import pandas as pd
 import pycountry
 import numpy as np
 import statsmodels.formula.api as smf
-import datetime
 import requests
 import io
 
@@ -107,17 +106,17 @@ def linear_fit(data, xcol='ndates', ycol='Rainfall_mm'):
 
 def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
     def dms2dd(v):
-        v=[float(x) for x in v.split(':')]
+        v=[float(x.strip()) for x in v.split(':')]
         return v[0]+v[1]/60.+v[2]/3600.
-    country2to3 = lambda x: pycountry.countries.get(alpha_2=x).alpha_3
+    def country2to3(x):
+        try:
+            return pycountry.countries.get(alpha_2=x.strip()).alpha_3
+        except:
+            return None
+            
+
     strp=lambda x: x.strip()
-    found=False
-    with open(stfile+".out", 'w') as ofile:
-        with open(stfile) as myFile:
-            for num, line in enumerate(myFile, 1):
-                if 'STAID,STANAME' in line:
-                    found=True
-                if (found) and line.strip()!="": ofile.write(line)
+    clean_data(stfile)
     stationsdf = pd.read_csv(stfile+".out", sep=',', converters={1:strp, 2:country2to3, 3:dms2dd, 4:dms2dd})
     stationsdf.rename(inplace=True, columns=lambda x: x.strip())
     stationsdf['STAID']=stationsdf['STAID'].apply('RR_STAID{0:06d}'.format, 8)
@@ -126,6 +125,16 @@ def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
     #with  pd.to_fea(station_store,"w") as hdfstore:
     #    hdfstore.put('stations',stationsdf, **COMP)
     stationsdf.to_feather(station_store)   
+
+def clean_data(stfile):
+    found=False
+    with open(stfile+".out", 'w', encoding="utf-8") as ofile:
+        with open(stfile, encoding='utf-8') as myFile:
+            for num, line in enumerate(myFile, 1):
+                if 'STAID,STANAME' in line:
+                    found=True
+                if (found) and line.strip()!="": ofile.write(line)
+
 def stats(dfs):
     res=[]
     for ds in dfs:

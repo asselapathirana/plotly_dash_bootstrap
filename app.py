@@ -14,7 +14,7 @@ import urllib.parse
 import pandas as pd
 import pycountry
 try:
-    from data.SECRET  import mapbox_access_token
+    from data.SECRET  import mapbox_access_token 
 except: 
     mapbox_access_token="foo"
 
