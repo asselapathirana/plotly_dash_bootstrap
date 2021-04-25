@@ -187,7 +187,7 @@ def add_stats_to_stations():
         stns.iloc[index, stns.columns.get_loc('TXT')] = s['TXT'] +  ' ({:.0f}y with m={:.3%})'.format(length, missing)
         ct+=1
         if (ct>10): break;
-    stns.dropna(axis=0, inplace=True)
+
     stns.to_feather(station_store) 
 
 def pre_process():
