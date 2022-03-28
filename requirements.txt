@@ -16,8 +16,8 @@ Jinja2==2.10.1
 MarkupSafe==1.1.1
 mock==3.0.5
 numexpr==2.7.0
-numpy==1.17.1
-pandas==0.25.1
+numpy
+pandas
 patsy==0.5.1
 plotly==4.1.0
 pyarrow==3.*
