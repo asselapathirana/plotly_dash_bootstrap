@@ -78,7 +78,7 @@ def rainfallcsv2feather():
         fs=feather_store.format(stnid)
         read_rain_from_csv( './data/eca_blend_rr/{}.txt'.format(stnid)).to_feather(fs)
         ct+=1
-        if (ct>10): break;
+        #if (ct>10): break;
         
         
 def resampled(staid,freq, summ):
