@@ -174,19 +174,20 @@ def stations():
 def add_stats_to_stations():
     """Calculate missing data % and legnth of each series and append to stations df"""
     stns = pd.read_feather(station_store)
-    ct=0
+    #ct=0
     stns['LENGTH']=np.nan
     stns['MISSING']=np.nan
     for index, s in stns.iterrows():
         stnid=s['STAID']
-        df=read_rain_from_csv('./data/eca_blend_rr/{}.txt'.format(stnid))
+        FILE='./data/eca_blend_rr/{}.txt'.format(stnid)
+        df=read_rain_from_csv(FILE)
         missing=df['Rainfall_mm'].isnull().sum()/df['Rainfall_mm'].shape[0]
-        print(missing)
+        print(FILE, missing)
         length=df['Rainfall_mm'].shape[0]/360.  # convert to years.
         stns.iloc[index, stns.columns.get_loc('LENGTH')] = length
         stns.iloc[index, stns.columns.get_loc('MISSING')] = missing
         stns.iloc[index, stns.columns.get_loc('TXT')] = s['TXT'] +  ' ({:.0f}y with m={:.3%})'.format(length, missing)
-        ct+=1
+        #ct+=1
 
     stns.to_feather(station_store) 
 
