@@ -1,3 +1,4 @@
+import chardet
 import pandas as pd
 import pycountry
 import numpy as np
@@ -53,7 +54,11 @@ def auto_tick(data_range, max_tick=10, tf_inside=False):
 
 def read_rain_from_csv(file):
     tomm= lambda x: np.NaN if float(x) < 0 else 0.1*float(x) # negative values = missing data
-    df = pd.read_csv(file, names=["Date", "Rainfall_mm"], index_col="Date", usecols=[2,3], header=16, parse_dates=['Date'], converters={3:tomm})
+    with open(file,'rb') as f:
+        data = f.read()  # or a chunk, f.read(1000000)
+    encoding=chardet.detect(data).get("encoding")
+    
+    df = pd.read_csv(file, encoding=encoding, names=["Date", "Rainfall_mm"], index_col="Date", usecols=[2,3], header=16, parse_dates=['Date'], converters={3:tomm})
     df.replace(-9999, np.nan, inplace=True)
     return df.reset_index()
 
