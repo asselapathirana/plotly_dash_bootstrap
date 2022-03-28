@@ -19,3 +19,11 @@ ECA_ALL.hdf
 eca_blend_rr directory with RR_STAID000010.txt like files
 __init__.py
 SECRET.py with mapbox_access_token="xxxxx"
+
+How to get updated data
+
+https://www.ecad.eu/dailydata/predefinedseries.php 
+
+ download ECA_blend_rr.zip
+
+ 
