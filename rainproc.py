@@ -168,9 +168,9 @@ def get_timelimits(dfs):
 
 
 def stations():
-    response = requests.get(station_store)
-    f=io.BytesIO(response.content)
-    data = pd.read_feather(f)    
+    #response = requests.get(station_store_online)
+    #f=io.BytesIO(response.content)
+    data = pd.read_feather(station_store)    
     return data
 
 def add_stats_to_stations():
