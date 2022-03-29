@@ -13,16 +13,15 @@ https://github.com/dokku/dokku/blob/master/docs/advanced-usage/persistent-storag
        Storage run mounts:            -v /opt/dokku/er/data:/app/data -v /opt/dokku/er/data:/data
 
 
-'data' directory mounted as persistent-storage should have the following
-
-eca_blend_rr directory with RR_STAID000010.txt like files
-__init__.py
+'data' directory mounted as persistent-storage should have the following 
 SECRET.py with mapbox_access_token="xxxxx"
+feather directory with STNRR_STAID00* files and stations.feather file. 
+(Those are created by )
 
-How to get updated data
-
+Download  updated data
 https://www.ecad.eu/dailydata/predefinedseries.php 
-
  download ECA_blend_rr.zip
+ unzip it to ./data/eca_blend_rr/RR_STAID0*.txt  like files
+ then run rainproc.py on them. 
 
  
