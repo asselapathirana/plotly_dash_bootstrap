@@ -82,7 +82,7 @@ def rainfallcsv2feather():
         
 def resampled(staid,freq, summ):
     #try:
-        data = pd.read_feather(feather_store.format(staid))
+    data = pd.read_feather(feather_store.format(staid))
     #except:
     #    response = requests.get(feather_store_online.format(staid))
     #    
