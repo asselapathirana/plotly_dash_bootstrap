@@ -15,7 +15,6 @@ https://github.com/dokku/dokku/blob/master/docs/advanced-usage/persistent-storag
 
 'data' directory mounted as persistent-storage should have the following
 
-ECA_ALL.hdf
 eca_blend_rr directory with RR_STAID000010.txt like files
 __init__.py
 SECRET.py with mapbox_access_token="xxxxx"

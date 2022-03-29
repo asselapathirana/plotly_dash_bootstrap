@@ -8,7 +8,6 @@ import io
 
 
 notmissingthres = {"Y":365*.9, "M":30*.9, "W":7*.9, "Q":365/4*.9, "24H":.9}
-hdf_store = '/data/ECA_ALL.hdf'
 
 USEONLINE=True
 
@@ -82,7 +81,6 @@ def rainfallcsv2feather():
         
         
 def resampled(staid,freq, summ):
-    #data=pd.read_hdf(hdf_store,'stations/{}'.format(staid))
     try:
         data = pd.read_feather(feather_store.format(staid))
     except:
@@ -202,7 +200,7 @@ def pre_process():
     add_stats_to_stations()
     
 if __name__ == "__main__":
-    pre_process() # takes several minutes (10min?) 
+    #pre_process() # takes several minutes (10min?) 
     freq="Y"
     staid = 'RR_STAID000094'
     ds = resampled(staid, freq, summ=TOTAL)
