@@ -11,8 +11,8 @@ notmissingthres = {"Y":365*.9, "M":30*.9, "W":7*.9, "Q":365/4*.9, "24H":.9}
 
 USEONLINE=True
 
-feather_store_online = 'http://data.pathirana.net/feather/STN{}'
-station_store_online = 'http://data.pathirana.net/feather/stations.feather'    
+#feather_store_online = 'http://data.pathirana.net/feather/STN{}'
+#station_store_online = 'http://data.pathirana.net/feather/stations.feather'    
 feather_store = './data/feather/STN{}'
 station_store = './data/feather/stations.feather'
 
@@ -81,13 +81,13 @@ def rainfallcsv2feather():
         
         
 def resampled(staid,freq, summ):
-    try:
+    #try:
         data = pd.read_feather(feather_store.format(staid))
-    except:
-        response = requests.get(feather_store_online.format(staid))
-        
-        f=io.BytesIO(response.content)
-        data = pd.read_feather(f)            
+    #except:
+    #    response = requests.get(feather_store_online.format(staid))
+    #    
+    #    f=io.BytesIO(response.content)
+    #    data = pd.read_feather(f)            
 
     # set the index to Date
     data.set_index('Date', inplace=True)
@@ -168,8 +168,7 @@ def get_timelimits(dfs):
 
 
 def stations():
-    response = requests.get(station_store_online)
-    
+    response = requests.get(station_store)
     f=io.BytesIO(response.content)
     data = pd.read_feather(f)    
     return data
