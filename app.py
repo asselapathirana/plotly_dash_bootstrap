@@ -59,9 +59,6 @@ graph1data = [ go.Scattermapbox(
             size=list(map(SetSize, station_df['LENGTH'])),
             color=list(map(SetColor, station_df['MISSING'])),
             opacity=0.5,
-            line=dict(width=2,
-                      color='DarkSlateGrey', 
-                      opacity=0.5),
             
         ),
         
