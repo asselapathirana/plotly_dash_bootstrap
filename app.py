@@ -142,7 +142,7 @@ def plot_ts(pts, trange, freq, summ):
         traces.append(go.Scatter(
             x=data.index,
             y=data['Rainfall_mm'],
-            name=station_df.iloc[pt]['TXT']+" [subset: {}y with m={}, p={}]".format(trange[1]-trange[0], mval, pval),
+            name=station_df.iloc[pt]['TXT']+" [subset: {}y with trend={:.3f}, p={:.3f}]".format(trange[1]-trange[0]+2, mval, pval),
             mode="markers+lines",
             marker=marker,       
         ))
