@@ -105,7 +105,7 @@ def resampled(staid,freq, summ):
 def linear_fit(data, xcol='ndates', ycol='Rainfall_mm'):
     data['ndates'] = (data.index-pd.to_datetime('1800-01-01')).astype('timedelta64[D]')
     ft=smf.ols( '{} ~ {}'.format(ycol,xcol), data=data, missing='drop' ).fit()
-    return ft.params.ndates*data.ndates+ft.params.Intercept, ft.pvalues.ndates
+    return ft.params.ndates*data.ndates+ft.params.Intercept, ft.pvalues.ndates, ft.params.ndates
 
 def format_stations(stfile="./data/eca_blend_rr/stations.txt"):
     def dms2dd(v):
@@ -201,11 +201,11 @@ def pre_process():
 if __name__ == "__main__":
     #pre_process() # takes several minutes (10min?) 
     freq="Y"
-    staid = 'RR_STAID000094'
+    staid = 'RR_STAID000004'
     ds = resampled(staid, freq, summ=TOTAL)
     
     dm = resampled(staid, freq, summ=MAX)
     #ds2 = resampled('RR_STAID011416', summ=TOTAL)
     #get_timelimits([ds,ds2])
     lf=linear_fit(ds)
-    print(ds)
+    print(lf)

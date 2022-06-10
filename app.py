@@ -134,7 +134,7 @@ def plot_ts(pts, trange, freq, summ):
             )
         ) 
         if (data['Rainfall_mm'].count()>=2): # at least 2 non-Nan values
-            yfit, pval = rp.linear_fit(data)
+            yfit, pval, mval = rp.linear_fit(data)
         else:
             yfit=[]
             pval=1.0
@@ -142,7 +142,7 @@ def plot_ts(pts, trange, freq, summ):
         traces.append(go.Scatter(
             x=data.index,
             y=data['Rainfall_mm'],
-            name=station_df.iloc[pt]['TXT']+" (trend, p={:4.4f})".format(pval),
+            name=station_df.iloc[pt]['TXT']+" [subset: {}y with m={}, p={}]".format(trange[1]-trange[0], mval, pval),
             mode="markers+lines",
             marker=marker,       
         ))
