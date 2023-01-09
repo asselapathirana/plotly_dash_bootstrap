@@ -157,11 +157,15 @@ def plot_ts(pts, trange, freq, summ):
         legend=dict(x=.1,y=1.0),
         xaxis=dict(
             title='Date',
+            rangeslider=dict(
+            visible=True
+        ),
             ),
         yaxis=dict(
             title="Precipitation (mm)",
             ),
         margin=go.Margin(l=50, r=10, b=50, t=30, pad=4),
+
     )    
         
     return {
