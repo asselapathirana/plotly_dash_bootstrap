@@ -3,8 +3,8 @@ import sys
 import json
 
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc
+from dash import html
 import plotly.graph_objs as go
 from plotly.colors import DEFAULT_PLOTLY_COLORS as COLORS
 import pycountry
@@ -26,7 +26,16 @@ BUTTONSTOREMOVE=['zoomIn2d', 'zoomOut2d', 'sendDataToCloud','hoverCompareCartesi
 
 CONFIG={'modeBarButtonsToRemove': BUTTONSTOREMOVE, 'displaylogo': False,} 
 
-app = dash.Dash('Rainfall trends in and around Europe')
+# load the styles
+external_css = [
+    "https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
+    "boxed_.css",
+    "https://codepen.io/chriddyp/pen/bWLwgP.css",
+    "https://fonts.googleapis.com/css?family=Raleway:400,400i,700,700i",
+    "https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i",
+]
+
+app = dash.Dash('Rainfall trends in and around Europe', external_stylesheets=external_css)
 server = app.server
 
 # function below sets the color based on amount
@@ -76,7 +85,7 @@ graph1layout = go.Layout(
         pitch=0,
         zoom=4,
     ),
-    margin=go.Margin(
+    margin=go.layout.Margin(
         l=10,
         r=10,
         b=10,
@@ -164,7 +173,7 @@ def plot_ts(pts, trange, freq, summ):
         yaxis=dict(
             title="Precipitation (mm)",
             ),
-        margin=go.Margin(l=50, r=10, b=50, t=30, pad=4),
+        margin=go.layout.Margin(l=50, r=10, b=50, t=30, pad=4),
 
     )    
         
@@ -182,8 +191,10 @@ def resampled(pt, freq, summ):
     data=rp.resampled(station_df.iloc[pt]['STAID'], freq, summ)
     return data
 
-
-init_ind=station_df[station_df['STAID']=='RR_STAID000162'].index[0] # De Buit (NL)
+try:
+    init_ind=station_df[station_df['STAID']=='RR_STAID000162'].index[0] # De Buit (NL)
+except:
+    init_ind=station_df[station_df['STAID']=='RR_STAID000001'].index[0] # #  for testing
 
 graph2= dcc.Graph(id='stationgraph', config=CONFIG)
 stat_display = html.Div(id='statdisplay')
@@ -211,7 +222,7 @@ freqdd=html.Div([
             {'label': 'Monthly', 'value': 'M'},
            # {'label': 'Daily', 'value': '24H'}
         ],
-        value='Y',
+        value='YE',
     )
 ])
 
@@ -288,7 +299,7 @@ def _dfs_list_as_one_df(value, trange, freq, summarydd):
     ]
 )
 def new_slider(value):
-    dfs=[resampled(int(v),'Y', rp.TOTAL) for v in value] # keep this annual. We just need limits as years. 
+    dfs=[resampled(int(v),'YE', rp.TOTAL) for v in value] # keep this annual. We just need limits as years. 
     mint,maxt=rp.get_timelimits(dfs)
     
     marks={int(x):str(int(x)) for x in rp.auto_tick([mint,maxt],max_tick=10)}
@@ -387,17 +398,8 @@ def staindex2stadesc(pts):
     return res
 
 
-# load the styles
-external_css = [
-    "https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
-    app.get_asset_url("boxed_.css"),
-    "https://codepen.io/chriddyp/pen/bWLwgP.css",
-    "https://fonts.googleapis.com/css?family=Raleway:400,400i,700,700i",
-    "https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i",
-]
 
-for css in external_css:
-    app.css.append_css({"external_url": css})
+
 
 if __name__ == '__main__':
     import os 

@@ -7,7 +7,7 @@ import requests
 import io
 
 
-notmissingthres = {"Y":365*.9, "M":30*.9, "W":7*.9, "Q":365/4*.9, "24H":.9}
+notmissingthres = {"YE":365*.9, "ME":30*.9, "WE":7*.9, "Q":365/4*.9, "24H":.9}
 
 USEONLINE=True
 
@@ -57,7 +57,7 @@ def read_rain_from_csv(file):
         data = f.read()  # or a chunk, f.read(1000000)
     encoding=chardet.detect(data).get("encoding")
     
-    df = pd.read_csv(file, encoding=encoding, names=["Date", "Rainfall_mm"], index_col="Date", usecols=[2,3], header=16, parse_dates=['Date'], converters={3:tomm})
+    df = pd.read_csv(file, encoding=encoding, names=["Date", "Rainfall_mm"], index_col="Date", usecols=[2,3], header=15, parse_dates=['Date'], converters={'Rainfall_mm':tomm})
     df.replace(-9999, np.nan, inplace=True)
     return df.reset_index()
 
@@ -103,7 +103,7 @@ def resampled(staid,freq, summ):
     return None # error   
 
 def linear_fit(data, xcol='ndates', ycol='Rainfall_mm'):
-    data['ndates'] = (data.index-pd.to_datetime('1800-01-01')).astype('timedelta64[D]')
+    data['ndates'] = (data.index-pd.to_datetime('1800-01-01')).days
     ft=smf.ols( '{} ~ {}'.format(ycol,xcol), data=data, missing='drop' ).fit()
     return ft.params.ndates*data.ndates+ft.params.Intercept, ft.pvalues.ndates, ft.params.ndates
 
@@ -179,28 +179,45 @@ def add_stats_to_stations():
     #ct=0
     stns['LENGTH']=np.nan
     stns['MISSING']=np.nan
-    for index, s in stns.iterrows():
-        stnid=s['STAID']
-        FILE='./data/eca_blend_rr/{}.txt'.format(stnid)
-        df=read_rain_from_csv(FILE)
-        missing=df['Rainfall_mm'].isnull().sum()/df['Rainfall_mm'].shape[0]
-        print(FILE, missing)
-        length=df['Rainfall_mm'].shape[0]/360.  # convert to years.
-        stns.iloc[index, stns.columns.get_loc('LENGTH')] = length
-        stns.iloc[index, stns.columns.get_loc('MISSING')] = missing
-        stns.iloc[index, stns.columns.get_loc('TXT')] = s['TXT'] +  ' ({:.0f}y with m={:.3%})'.format(length, missing)
-        #ct+=1
-
+    try:
+        for index, s in stns.iterrows():
+            stnid=s['STAID']
+            FILE='./data/eca_blend_rr/{}.txt'.format(stnid)
+            df=read_rain_from_csv(FILE)
+            missing=df['Rainfall_mm'].isnull().sum()/df['Rainfall_mm'].shape[0]
+            print(FILE, missing)
+            length=df['Rainfall_mm'].shape[0]/360.  # convert to years.
+            stns.iloc[index, stns.columns.get_loc('LENGTH')] = length
+            stns.iloc[index, stns.columns.get_loc('MISSING')] = missing
+            stns.iloc[index, stns.columns.get_loc('TXT')] = s['TXT'] +  ' ({:.0f}y with m={:.3%})'.format(length, missing)
+            #ct+=1
+    except Exception as e:
+        print("Error in add_stats_to_stations stations:", e)
+        print("I assume this is for testing. I will remove the rest of the station entries and continue.")
+        input("Press Enter to continue...")
+        stns.dropna(axis=0, inplace=True)
     stns.to_feather(station_store) 
 
 def pre_process():
-    format_stations()
-    rainfallcsv2feather() 
-    add_stats_to_stations()
-    
+    try:
+        format_stations()
+    except Exception as e:
+        print("Error in formatting stations:", e)
+        input("Press Enter to continue...")
+
+    try:
+        rainfallcsv2feather() 
+    except Exception as e:
+        print("Error in rainfallcsv2feather stations:", e)
+        input("Press Enter to continue...")
+    try:
+        add_stats_to_stations()
+    except Exception as e:
+        print("Error in add_stats_to_stations stations:", e)
+        input("Press Enter to continue...")
 if __name__ == "__main__":
-    #pre_process() # takes several minutes (10min?) 
-    freq="Y"
+    pre_process() # takes several minutes (10min?) 
+    freq="ME"
     staid = 'RR_STAID000004'
     ds = resampled(staid, freq, summ=TOTAL)
     
